@@ -21,3 +21,5 @@ time_zone_id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT comment '时区ID'
 time_zone_name varchar(32) NOT NULL comment '时区名称',
 time_zone VARCHAR(32) NOT NULL comment '以UTC为准的时区，如UTC +3或UTC -5)'
 );
+
+
