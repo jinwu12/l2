@@ -16,6 +16,31 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `Tbl_symbol_method`
+--
+
+DROP TABLE IF EXISTS `Tbl_symbol_method`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Tbl_symbol_method` (
+  `method_id` int unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `symbol_name` varchar(16) NOT NULL COMMENT '品类名称',
+  `method_name` varchar(128) NOT NULL COMMENT '获取该symbol的函数名称',
+  `comments` text COMMENT '备注字段',
+  PRIMARY KEY (`method_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Tbl_symbol_method`
+--
+
+LOCK TABLES `Tbl_symbol_method` WRITE;
+/*!40000 ALTER TABLE `Tbl_symbol_method` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Tbl_symbol_method` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `production_combinations_list`
 --
 
@@ -178,4 +203,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-11-17 12:07:56
+-- Dump completed on 2021-11-21  3:02:50
