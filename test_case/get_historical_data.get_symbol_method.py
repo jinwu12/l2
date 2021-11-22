@@ -7,5 +7,5 @@ from libs import get_historical_data
 test_db = commons.db_connect()
 result = get_historical_data.get_symbol_method(test_db)
 for i in result:
-    print(i[0],i[1])
+    print(i[0],i[1],i[2])
 test_db.close()
