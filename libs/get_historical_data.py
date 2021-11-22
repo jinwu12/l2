@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 import pytz
 from datetime import datetime
+from decimal import Decimal
 
 
 #获取symbol对应拉取函数名称及对应时区
@@ -28,10 +29,10 @@ def timestamp_to_time(timestamp,timezone):
     time_str = datetime.fromtimestamp(timestamp,tz)
     return time_str
 
-#标准化yfinance返回的时间文本格式
+#标准化时间文本格式
 def standardize_yfinance_time(time):
     #以-为分隔符，将时间文本进行拆分
-    tmp = time.split("-")
+    tmp = time.replace('-','|').replace('+','|').split("|")
     #只取前3个值，去掉最后的-5:00
     new_time=tmp[0]+'-'+tmp[1]+'-'+tmp[2]
     #返回时间
@@ -61,12 +62,12 @@ def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
     for index, row in df.iterrows():
         row_list = []
         #将第一列时间进行格式化处理，并根据对应时区转换为时间戳
-        ts = time_to_timestamp(standardize_yfinance_time(index),timezone)
-        #获取开盘价、最高价、最低价和调整后的收盘价
-        open_price = row['Open']
-        high_price = row['High']
-        low_price = row['Low']
-        close_price =row['Adj Close']
+        ts = time_to_timestamp(standardize_yfinance_time(str(index)),timezone)
+        #获取开盘价、最高价、最低价和调整后的收盘价;价格取小数点后4位
+        open_price = Decimal(row['Open']).quantize(Decimal("0.0001"), rounding = "ROUND_HALF_UP")
+        high_price = Decimal(row['High']).quantize(Decimal("0.0001"), rounding = "ROUND_HALF_UP")
+        low_price = Decimal(row['Low']).quantize(Decimal("0.0001"), rounding = "ROUND_HALF_UP")
+        close_price = Decimal(row['Adj Close']).quantize(Decimal("0.0001"), rounding = "ROUND_HALF_UP")
         row_list.extend([ts,open_price,high_price,low_price,close_price])
         #将该列列表附加到结果列表中进行嵌套
         result_list.append(row_list)
