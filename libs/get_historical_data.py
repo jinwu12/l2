@@ -3,6 +3,8 @@ import pandas as pd
 import pytz
 from datetime import datetime
 from decimal import Decimal
+import MetaTrader5 as mt5 
+
 
 
 #获取symbol对应拉取函数名称及对应时区
@@ -74,5 +76,37 @@ def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
     return result_list
 
 
+#从db中读取mt5账号信息
+def mt5_account_info(mt5_user_id,db):
+    #根据账号名称，查询出账号详细信息
+    mt5_account_cursor = db.cursor()
+    mt5_account_info_sql = 'select account_name,account_server,account_pass from account_info where account_platform =\'mt5\' and account_name=\''+mt5_user_id+'\''
+    mt5_account_cursor.execute(mt5_account_info_sql)
+    return mt5_account_cursor
 
+
+
+#从mt5拉取制定时间周期内的数据，并将世界标准化为时间戳
+def get_historical_data_from_mt5(symbol,interval,start,end,timezone,mt5_user,db):
+    #根据指定的时区，将开始和结束时间转化为时间戳
+    start_ts = time_to_timestamp(start,timezone)
+    end_ts = time_to_timestamp(end,timezone)
+    
+    #查询mt5账户信息，用于建立连接
+    mt5_account = mt5_account_info(mt5_user,db)
+    account_name = mt5_account[0]
+    account_server = mt5_account[1]
+    account_pass = mt5_account[2]
+
+    #建立mt5链接
+    if not mt5.initialize(login=account_name,server=account_server,password=account_pass):    
+        print("initialize() failed, error code =",mt5.last_error()) 
+        quit()
+
+    #使用copy_rates_range函数获取该区间内数据
+    #interval传入必须按照timeframe格式，如TIMEFRAME_M1、TIMEFRAME_H1。详情请参考:https://www.mql5.com/en/docs/integration/python_metatrader5/mt5copyratesfrom_py#timeframe
+    #可以考虑将timeframe与interval对应关系入库
+    rates = mt5.copy_rates_range(symbol,interval,start_ts,end_ts)
+
+    return rates
 
