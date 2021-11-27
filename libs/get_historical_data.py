@@ -80,7 +80,7 @@ def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
 def mt5_account_info(mt5_user_id,db):
     #根据账号名称，查询出账号详细信息
     mt5_account_cursor = db.cursor()
-    mt5_account_info_sql = 'select account_name,account_server,account_pass from account_info where account_platform =\'mt5\' and account_name=\''+mt5_user_id+'\''
+    mt5_account_info_sql = 'select account_name,account_server,account_pass from Global_Config.account_info where account_platform =\'mt5\' and account_name=\''+mt5_user_id+'\''
     mt5_account_cursor.execute(mt5_account_info_sql)
     return mt5_account_cursor
 
