@@ -3,7 +3,8 @@ import pandas as pd
 import pytz
 from datetime import datetime
 from decimal import Decimal
-import MetaTrader5 as mt5 
+import MetaTrader5 as mt5
+import configparser
 
 
 
@@ -21,7 +22,7 @@ def get_symbol_method(db):
 #将时间文本转化为unix时间戳，以便存入db
 def time_to_timestamp(time,timezone):
     tz = pytz.timezone(timezone)
-    ts = tz.localize(time).timestamp()
+    ts = tz.localize(pd.to_datetime(time)).timestamp()
     return int(ts)
 
 
@@ -76,7 +77,7 @@ def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
     return result_list
 
 
-#从db中读取mt5账号信息
+#从db中读取mt5账号信息,走db读取参数死活无法连上mt5，走配置文件就可以……把这个函数改成从db里生成配置文件，再去读配置文件试试
 def mt5_account_info(mt5_user_id,db):
     #根据账号名称，查询出账号详细信息
     mt5_account_db = db
@@ -84,7 +85,18 @@ def mt5_account_info(mt5_user_id,db):
     mt5_account_info_sql = 'select account_name,account_server,account_pass from Global_Config.account_info where account_platform =\'mt5\' and account_name=\''+mt5_user_id+'\''
     mt5_account_cursor.execute(mt5_account_info_sql)
     result = mt5_account_cursor.fetchall()
-    return result
+    #生成对应的配置文件
+    config = configparser.ConfigParser()
+    for i in range(len(result)):
+        config_section_name = 'account_info_'+str(i)
+        config[config_section_name] = {
+                'account_name' : result[i][0],
+                'account_server' : result[i][1],
+                'account_pass' : result[i][2]
+                }
+    #写入配置文件
+    cfg = open('account_config.ini',mode='w')
+    config.write(cfg)
 
 
 
@@ -96,14 +108,17 @@ def get_historical_data_from_mt5(symbol,interval,start,end,timezone,mt5_user,db)
     
     #查询mt5账户信息，用于建立连接
     mt5_account = mt5_account_info(mt5_user,db)
-    account_name = mt5_account[0]
-    account_server = mt5_account[1]
-    account_pass = mt5_account[2]
+    account_name = int(mt5_account[0][0])
+    account_server = mt5_account[0][1]
+    account_pass = mt5_account[0][2]
+    #print(account_name+':'+type(account_name)+';'account_server+':'+type(account_server),type(account_pass))
 
     #建立mt5链接
-    if not mt5.initialize(login=account_name,server=account_server,password=account_pass):    
+    if not mt5.initialize(login=mt5_account, server=account_server,password=account_pass):
         print("initialize() failed, error code =",mt5.last_error()) 
         quit()
+
+    print(mt5.account_info())
 
     #使用copy_rates_range函数获取该区间内数据
     #interval传入必须按照timeframe格式，如TIMEFRAME_M1、TIMEFRAME_H1。详情请参考:https://www.mql5.com/en/docs/integration/python_metatrader5/mt5copyratesfrom_py#timeframe
