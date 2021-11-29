@@ -3,9 +3,8 @@ import pandas as pd
 import pytz
 from datetime import datetime
 from decimal import Decimal
-import MetaTrader5 as mt5
-import configparser
-
+#import MetaTrader5 as mt5
+from configparser import ConfigParser
 
 
 #获取symbol对应拉取函数名称及对应时区
@@ -19,11 +18,13 @@ def get_symbol_method(db):
     #返回结果列表
     return symbol_method_cursor
 
-#将时间文本转化为unix时间戳，以便存入db
+#将指定时区的时间文本转化为utc时区的unix时间戳，以便存入db
 def time_to_timestamp(time,timezone):
     tz = pytz.timezone(timezone)
-    ts = tz.localize(pd.to_datetime(time)).timestamp()
-    return int(ts)
+    t_local = tz.localize(pd.to_datetime(time))
+    t_utc = t_local.astimezone(pytz.UTC)
+    ts = int(t_utc.timestamp())
+    return ts
 
 
 #将时间戳转换为时间文本，以便展示或查看
@@ -64,7 +65,7 @@ def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
     #遍历dataframe中的每一行
     for index, row in df.iterrows():
         row_list = []
-        #将第一列时间进行格式化处理，并根据对应时区转换为时间戳
+        #将第一列时间进行格式化处理，并根据对应时区转换为utc时间戳
         ts = time_to_timestamp(standardize_yfinance_time(str(index)),timezone)
         #获取开盘价、最高价、最低价和调整后的收盘价;价格取小数点后4位
         open_price = Decimal(row['Open']).quantize(Decimal("0.0001"), rounding = "ROUND_HALF_UP")
@@ -77,7 +78,7 @@ def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
     return result_list
 
 
-#从db中读取mt5账号信息,走db读取参数死活无法连上mt5，走配置文件就可以……把这个函数改成从db里生成配置文件，再去读配置文件试试
+#从db中读取mt5账号信息,走db读取参数死活无法连上mt5，走配置文件就可以……把这个函数改成从db里生成配置文件，再去读配置文件
 def mt5_account_info(mt5_user_id,db):
     #根据账号名称，查询出账号详细信息
     mt5_account_db = db
@@ -86,7 +87,7 @@ def mt5_account_info(mt5_user_id,db):
     mt5_account_cursor.execute(mt5_account_info_sql)
     result = mt5_account_cursor.fetchall()
     #生成对应的配置文件
-    config = configparser.ConfigParser()
+    config = ConfigParser()
     for i in range(len(result)):
         config_section_name = 'account_info_'+str(i)
         config[config_section_name] = {
@@ -98,32 +99,56 @@ def mt5_account_info(mt5_user_id,db):
     cfg = open('account_config.ini',mode='w')
     config.write(cfg)
 
+#从账号配置文件中读取指定账号的信息，初始化对应mt5连接
+def init_mt5_from_ini(mt5_user_id,mt5):
+        account_cfg = ConfigParser()
+        account_cfg.read('account_config.ini')
+        for i in account_cfg.sections():
+            if account_cfg.get(i,"account_name") == mt5_user_id:
+                if not mt5.initialize(
+                        login=int(account_cfg.get(i,"account_name")),
+                        server=account_cfg.get(i,"account_server"),
+                        password=account_cfg.get(i,"account_pass")
+                        ):
+                        print("initialize() failed, error code =",mt5.last_error())
+                        return False
+                        quit()
+                else:
+                    return True
+            else:
+                print("account id:"+mt5_user_id+" is not found!")
+                return False
 
 
 #从mt5拉取制定时间周期内的数据，并将世界标准化为时间戳
-def get_historical_data_from_mt5(symbol,interval,start,end,timezone,mt5_user,db):
-    #根据指定的时区，将开始和结束时间转化为时间戳
-    start_ts = time_to_timestamp(start,timezone)
-    end_ts = time_to_timestamp(end,timezone)
-    
-    #查询mt5账户信息，用于建立连接
-    mt5_account = mt5_account_info(mt5_user,db)
-    account_name = int(mt5_account[0][0])
-    account_server = mt5_account[0][1]
-    account_pass = mt5_account[0][2]
-    #print(account_name+':'+type(account_name)+';'account_server+':'+type(account_server),type(account_pass))
+def get_historical_data_from_mt5(symbol,interval,start,end,mt5_user,db,mt5):
+    #将时间文本转为datetime对象
+    start_t = pd.to_datetime(start)
+    end_t = pd.to_datetime(end)
 
-    #建立mt5链接
-    if not mt5.initialize(login=mt5_account, server=account_server,password=account_pass):
-        print("initialize() failed, error code =",mt5.last_error()) 
-        quit()
+    #根据db生成账号信息配置文件
+    mt5_account_info(mt5_user,db)
 
-    print(mt5.account_info())
+    #初始化mt5指定账号的mt5连接
+    init_mt5_from_ini(mt5_user,mt5)
 
     #使用copy_rates_range函数获取该区间内数据
     #interval传入必须按照timeframe格式，如TIMEFRAME_M1、TIMEFRAME_H1。详情请参考:https://www.mql5.com/en/docs/integration/python_metatrader5/mt5copyratesfrom_py#timeframe
     #可以考虑将timeframe与interval对应关系入库
-    rates = mt5.copy_rates_range(symbol,interval,start_ts,end_ts)
+    #将结果转为list及结果中的tuple转换为list，方便后续使用
+    #icmarkets+mt5默认返回的就是utc时间戳，无需额外转换
+    rates = mt5.copy_rates_range(symbol,interval,start_t,end_t).tolist()
 
-    return rates
+    rates_list = []
+    #遍历结果列表
+    for i in rates:
+        #将结果列表中的tuple元素转换为list
+        j=list(i)
+        #将转换过的列表append到结果列表中
+        rates_list.append(j)
+
+    #获取完成，关闭连接
+    mt5.shutdown()
+
+    return rates_list
 
