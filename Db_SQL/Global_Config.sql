@@ -27,18 +27,28 @@ CREATE TABLE `Tbl_symbol_method` (
   `symbol_name` varchar(16) NOT NULL COMMENT '品类名称',
   `method_name` varchar(128) NOT NULL COMMENT '获取该symbol的函数名称',
   `comments` text COMMENT '备注字段',
+  `timezone` varchar(128) NOT NULL COMMENT '该symbol从该数据源拉取时所在的时区，用于计算时间戳',
   PRIMARY KEY (`method_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `Tbl_symbol_method`
+-- Table structure for table `account_info`
 --
 
-LOCK TABLES `Tbl_symbol_method` WRITE;
-/*!40000 ALTER TABLE `Tbl_symbol_method` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Tbl_symbol_method` ENABLE KEYS */;
-UNLOCK TABLES;
+DROP TABLE IF EXISTS `account_info`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `account_info` (
+  `account_id` int unsigned NOT NULL AUTO_INCREMENT COMMENT '账号唯一ID',
+  `account_name` varchar(128) NOT NULL COMMENT '账号登陆名称',
+  `account_platform` varchar(64) NOT NULL COMMENT '账号所属平台',
+  `account_server` varchar(128) NOT NULL COMMENT '账号所在服务器',
+  `account_pass` varchar(128) NOT NULL COMMENT '账号登陆密码',
+  `desciption` text COMMENT '账号描述',
+  PRIMARY KEY (`account_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `production_combinations_list`
@@ -56,15 +66,6 @@ CREATE TABLE `production_combinations_list` (
   PRIMARY KEY (`combination_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `production_combinations_list`
---
-
-LOCK TABLES `production_combinations_list` WRITE;
-/*!40000 ALTER TABLE `production_combinations_list` DISABLE KEYS */;
-/*!40000 ALTER TABLE `production_combinations_list` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `production_symbol_list`
@@ -85,15 +86,6 @@ CREATE TABLE `production_symbol_list` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `production_symbol_list`
---
-
-LOCK TABLES `production_symbol_list` WRITE;
-/*!40000 ALTER TABLE `production_symbol_list` DISABLE KEYS */;
-/*!40000 ALTER TABLE `production_symbol_list` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `production_timezone_list`
 --
 
@@ -107,15 +99,6 @@ CREATE TABLE `production_timezone_list` (
   PRIMARY KEY (`time_zone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `production_timezone_list`
---
-
-LOCK TABLES `production_timezone_list` WRITE;
-/*!40000 ALTER TABLE `production_timezone_list` DISABLE KEYS */;
-/*!40000 ALTER TABLE `production_timezone_list` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `sim_combinations_list`
@@ -133,15 +116,6 @@ CREATE TABLE `sim_combinations_list` (
   PRIMARY KEY (`combination_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sim_combinations_list`
---
-
-LOCK TABLES `sim_combinations_list` WRITE;
-/*!40000 ALTER TABLE `sim_combinations_list` DISABLE KEYS */;
-/*!40000 ALTER TABLE `sim_combinations_list` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `sim_symbol_list`
@@ -162,15 +136,6 @@ CREATE TABLE `sim_symbol_list` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `sim_symbol_list`
---
-
-LOCK TABLES `sim_symbol_list` WRITE;
-/*!40000 ALTER TABLE `sim_symbol_list` DISABLE KEYS */;
-/*!40000 ALTER TABLE `sim_symbol_list` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `sim_timezone_list`
 --
 
@@ -184,15 +149,6 @@ CREATE TABLE `sim_timezone_list` (
   PRIMARY KEY (`time_zone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sim_timezone_list`
---
-
-LOCK TABLES `sim_timezone_list` WRITE;
-/*!40000 ALTER TABLE `sim_timezone_list` DISABLE KEYS */;
-/*!40000 ALTER TABLE `sim_timezone_list` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -203,4 +159,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-11-21  3:02:50
+-- Dump completed on 2021-12-03 16:11:29

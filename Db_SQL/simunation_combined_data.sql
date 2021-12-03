@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.27, for Linux (x86_64)
 --
--- Host: localhost    Database: production_combined_data
+-- Host: localhost    Database: simunation_combined_data
 -- ------------------------------------------------------
 -- Server version	8.0.27-0ubuntu0.20.04.1
 

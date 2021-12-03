@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.27, for Linux (x86_64)
 --
--- Host: localhost    Database: production_combined_data
+-- Host: localhost    Database: production_signal
 -- ------------------------------------------------------
 -- Server version	8.0.27-0ubuntu0.20.04.1
 
@@ -16,21 +16,19 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `daily_combined_data_template`
+-- Table structure for table `realtime_signal_template`
 --
 
-DROP TABLE IF EXISTS `daily_combined_data_template`;
+DROP TABLE IF EXISTS `realtime_signal_template`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `daily_combined_data_template` (
-  `combination_id` int unsigned NOT NULL COMMENT '交易组合id，用于标识该日线行情记录表为哪个交易组合的数据',
-  `ts` bigint unsigned NOT NULL COMMENT '时间点数据均需要转换为unix timestamp后再入库',
-  `timezone_id` int unsigned NOT NULL COMMENT '时区id，用于标识该表使用的是哪个时区',
-  `price_closed` double NOT NULL COMMENT '以该时区为准的日线收盘价',
-  `is_recorded` tinyint(1) NOT NULL COMMENT '该价格是否需要在行情记录表中进行显性显示，0为小幅波动，不需要；1为需要',
-  `recorded_column` tinyint unsigned NOT NULL COMMENT '当前记录栏。0：不记录；1：次级回升栏；2：自然回升栏；3：上升趋势栏；4：下降趋势栏；5：自然回撤栏；6：次级回撤栏',
-  `is_pivot` tinyint(1) NOT NULL COMMENT '该点是否关键点,1为是,0为否',
-  `comments` text COMMENT '备注字段'
+CREATE TABLE `realtime_signal_template` (
+  `combination_id` int unsigned NOT NULL COMMENT '交易组合id，用于标识该表记录的是哪个交易组合的信号',
+  `timezone_id` tinyint NOT NULL COMMENT '时区id，用于标识该表记录的是以哪个时区为准的交易组合信号',
+  `ts` bigint unsigned NOT NULL COMMENT '该点组合报价的时间点，需要把时间点转为unix时间戳再存入',
+  `priced` double NOT NULL COMMENT '该时间点的组合价格',
+  `trading_signal` tinyint NOT NULL COMMENT '该组合价格所匹配的交易信号。具体交易信号请参考交易信号表',
+  `cooments` text COMMENT '备注字段'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
