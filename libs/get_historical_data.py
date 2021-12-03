@@ -72,9 +72,9 @@ def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
         high_price = Decimal(row['High']).quantize(Decimal("0.0001"), rounding = "ROUND_HALF_UP")
         low_price = Decimal(row['Low']).quantize(Decimal("0.0001"), rounding = "ROUND_HALF_UP")
         close_price = Decimal(row['Adj Close']).quantize(Decimal("0.0001"), rounding = "ROUND_HALF_UP")
-        row_list.extend([ts,open_price,high_price,low_price,close_price])
+        row_list.extend([symbol,ts,open_price,high_price,low_price,close_price])
         #将该列列表附加到结果列表中进行嵌套
-        result_list.append(row_list)
+        result_list.append(tuple(row_list))
     return result_list
 
 
@@ -138,17 +138,17 @@ def get_historical_data_from_mt5(symbol,interval,start,end,mt5_user,db,mt5):
     #将结果转为list及结果中的tuple转换为list，方便后续使用
     #icmarkets+mt5默认返回的就是utc时间戳，无需额外转换
     rates = mt5.copy_rates_range(symbol,interval,start_t,end_t).tolist()
-
     rates_list = []
     #遍历结果列表
     for i in rates:
-        #将结果列表中的tuple元素转换为list
-        j=list(i)
-        #将转换过的列表append到结果列表中
-        rates_list.append(j)
-
+        #将结果列表中的tuple元素仅截取时间戳、开盘价、最高价、最低价、收盘价，并拼接上symbol
+        j=()
+        j=(symbol,)
+        k=()
+        k=j+i[0:5]
+        #将转换过的tuple append到结果列表中
+        rates_list.append(k)
     #获取完成，关闭连接
     mt5.shutdown()
-
     return rates_list
 
