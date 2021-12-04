@@ -55,10 +55,10 @@ def yf_date_to_timestamp(date,timezone):
 #从yfinance拉取指定时间周期内的数据，并且将时间标准化为时间戳
 def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
     # valid intervals: 1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo
+    #根据symbol name获取拉取用的symbol value
+    
     # 根据输入参数拉取原始数据
     o_data = yf.download( tickers = symbol, interval = interval, start = start ,end = end)  
-    #在源数据中增加一列symbol名称，方便入库使用
-    o_data['ticker'] = symbol
     #修改dataframe中的时间为时间戳并返回结果列表
     df = pd.DataFrame(o_data)
     result_list = []

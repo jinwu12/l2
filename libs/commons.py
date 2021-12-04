@@ -2,6 +2,17 @@ import mysql.connector
 from configparser import ConfigParser
 import datetime
 
+#根据symbol name获取对应的symbol values
+def get_symbol_value(symbol_name,db):
+    symbol_method_db = db
+    symbol_method_db_cursor = symbol_method_db.cursor()
+    #获取symbol name对应的symbol value，如果有多个则只返回第一个
+    get_first_symbol_value = 'select symbol_value from Global_Config.Tbl_symbol_method where symbol_name=\''+symbol_name+'\''
+    print(get_first_symbol_value)
+    symbol_method_db_cursor.execute(get_first_symbol_value)
+    return symbol_method_db_cursor.fetchall()[0][0]
+
+
 #根据配置文件中的db配置，连接数据库
 def db_connect():
     #读取配置文件中的数据配置
