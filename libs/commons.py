@@ -52,6 +52,5 @@ def insert_historical_original_data_to_db(symbol_name,data_list,interval,db):
     #通过executemany来批量执行语句
     n=source_data_cursor.executemany(insert_source_data_template_sql,data_list)
     db.commit()
-    db.close()
 
     

@@ -16,7 +16,7 @@ def get_symbol_method(db):
     get_all_symbol_method = 'select distinct symbol_name,method_name,timezone from Global_Config.Tbl_symbol_method'
     symbol_method_cursor.execute(get_all_symbol_method)
     #返回结果列表
-    return symbol_method_cursor
+    return symbol_method_cursor.fetchall()
 
 #将指定时区的时间文本转化为utc时区的unix时间戳，以便存入db
 def time_to_timestamp(time,timezone):
@@ -123,8 +123,10 @@ def init_mt5_from_ini(mt5_user_id,mt5):
 #从mt5拉取制定时间周期内的数据，并将世界标准化为时间戳
 def get_historical_data_from_mt5(symbol,interval,start,end,mt5_user,db,mt5):
     #将时间文本转为datetime对象
+    print(start,end)
     start_t = pd.to_datetime(start)
     end_t = pd.to_datetime(end)
+    print(start_t,end_t)
 
     #根据db生成账号信息配置文件
     mt5_account_info(mt5_user,db)
