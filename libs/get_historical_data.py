@@ -123,10 +123,8 @@ def init_mt5_from_ini(mt5_user_id,mt5):
 #从mt5拉取制定时间周期内的数据，并将世界标准化为时间戳
 def get_historical_data_from_mt5(symbol,interval,start,end,mt5_user,db,mt5):
     #将时间文本转为datetime对象
-    print(start,end)
     start_t = pd.to_datetime(start)
     end_t = pd.to_datetime(end)
-    print(start_t,end_t)
 
     #根据db生成账号信息配置文件
     mt5_account_info(mt5_user,db)

@@ -8,7 +8,6 @@ def get_symbol_value(symbol_name,db):
     symbol_method_db_cursor = symbol_method_db.cursor()
     #获取symbol name对应的symbol value，如果有多个则只返回第一个
     get_first_symbol_value = 'select symbol_value from Global_Config.Tbl_symbol_method where symbol_name=\''+symbol_name+'\''
-    print(get_first_symbol_value)
     symbol_method_db_cursor.execute(get_first_symbol_value)
     return symbol_method_db_cursor.fetchall()[0][0]
 
@@ -45,9 +44,6 @@ def insert_historical_original_data_to_db(symbol_name,data_list,interval,db):
 
     #生成模版sql
     insert_source_data_template_sql = 'insert into '+table_name+'(symbol_name,ts,price_open,price_hgih,price_low,price_closed) values(%s,%s,%s,%s,%s,%s)'
-
-    print(insert_source_data_template_sql)
-    print(data_list)
 
     #通过executemany来批量执行语句
     n=source_data_cursor.executemany(insert_source_data_template_sql,data_list)
