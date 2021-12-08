@@ -4,10 +4,9 @@ import sys
 import MetaTrader5 as mt5
 
 #获取对应的参数
-start = '2020-01-01'
-end = '2021-12-06'
-interval = '1h'
-print(start,end,interval)
+start = '2021-11-29'
+end = '2021-12-05'
+interval = '1m'
 #mt5数据源专用账号
 mt5_account = '5348288'
 
@@ -38,7 +37,6 @@ for symbol_method in method_list:
         if interval == '1m':
             mt5_rates = get_historical_data.get_historical_data_from_mt5(symbol_value,mt5.TIMEFRAME_M1,start,end,mt5_account,db,mt5)
         #数据入库
-        print(mt5_rates)
         commons.insert_historical_original_data_to_db(symbol_name,mt5_rates,interval,db)
 
 
