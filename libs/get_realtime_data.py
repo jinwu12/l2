@@ -19,12 +19,12 @@ def calculate_dxy(symbols_rate_list):
     #遍历所有货币对报价，计算没有
     for symbol_rate in symbols_rate_list:
         #初始化dxy_rate_list，列表元素第一个为symbol名称、第二个为时间戳、第三个为开盘价、第四个为最高价、第五个为最低价、第六个为收盘价
-        symbol_name = symbol_rate[0][0]
-        symbol_ts = symbol_rate[0][1]
-        symbol_open_price = symbol_rate[0][2]
-        symbol_high_price = symbol_rate[0][3]
-        symbol_low_price = symbol_rate[0][4]
-        symbol_closed_price = symbol_rate[0][5]
+        symbol_name = symbol_rate[0]
+        symbol_ts = symbol_rate[1]
+        symbol_open_price = symbol_rate[2]
+        symbol_high_price = symbol_rate[3]
+        symbol_low_price = symbol_rate[4]
+        symbol_closed_price = symbol_rate[5]
         #将对应的货币对取对应的指数值，并与dxy_rate_list中开盘、最高、最低和收盘价相乘后直接修改其对应的值
         #时间戳赋值
         dxy_rate_list[1] = symbol_ts
