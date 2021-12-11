@@ -2,3 +2,4 @@ mysql-connector-python
 yfinance
 MetaTrader5
 schedule
+loguru

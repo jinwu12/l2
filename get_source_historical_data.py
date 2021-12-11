@@ -4,9 +4,9 @@ import sys
 import MetaTrader5 as mt5
 
 #获取对应的参数
-start = '2021-11-29'
-end = '2021-12-05'
-interval = '1m'
+start = '2021-12-05'
+end = '2021-12-11'
+interval = '1h'
 #mt5数据源专用账号
 mt5_account = '5348288'
 
