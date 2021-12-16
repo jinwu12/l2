@@ -69,7 +69,6 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                 mt5_start_time = pd.to_datetime(current_time) - datetime.timedelta(hours=1)
                 #结束时间等于开始时间
                 mt5_end_time = mt5_start_time
-                print(mt5_start_time,timezone)
                 #拉取数据
                 mt5_rates.append(get_historical_data.get_historical_data_from_mt5(symbol_value,mt5.TIMEFRAME_H1,mt5_start_time,mt5_end_time,mt5_account,db,mt5)[0])
             #附加到data_dict中
@@ -105,6 +104,7 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                 #数据入库
                 commons.insert_historical_original_data_to_db(symbol_value,dxy_rates,interval,db)
             result_list.append(data_dict)
+    print(datetime.datetime.now(),result_list)
     return result_list
 
 
