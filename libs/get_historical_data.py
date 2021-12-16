@@ -120,7 +120,7 @@ def init_mt5_from_ini(mt5_user_id,mt5):
                 return False
 
 
-#从mt5拉取制定时间周期内的数据，并将世界标准化为时间戳
+#从mt5拉取制定时间周期内的数据，并将时间标准化为utc时间戳
 def get_historical_data_from_mt5(symbol,interval,start,end,mt5_user,db,mt5):
     #将时间文本转为datetime对象
     start_t = pd.to_datetime(start)
