@@ -3,3 +3,4 @@ yfinance
 MetaTrader5
 schedule
 loguru
+retrying

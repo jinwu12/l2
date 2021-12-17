@@ -42,12 +42,16 @@ def update_realtime_data(interval,db,mt5_account,mt5):
             #将method附加到结果中
             #yfinance的分钟级及小时级数据拉取逻辑一致
             #拉取数据，并截取最后一个元素作为结果; 因为入库时executemany需要外侧是list+内层是tuple，所以此处需要用append而不能直接赋值
-            yf_rates.append(get_historical_data.get_historical_data_from_yfinance(symbol_value,interval,yf_start_time.strftime('%Y-%m-%d'),yf_end_time.strftime('%Y-%m-%d'),timezone)[-1])
-            #附加到data_dict中
-            data_dict['value'] = yf_rates
-            #数据入库
-            commons.insert_historical_original_data_to_db(symbol_name,yf_rates,interval,db)
-            result_list.append(data_dict)
+            try:
+                yf_rates.append(get_historical_data.get_historical_data_from_yfinance(symbol_value,interval,yf_start_time.strftime('%Y-%m-%d'),yf_end_time.strftime('%Y-%m-%d'),timezone)[-1])
+            except IndexError:
+                print(symbol_value+":数据拉取失败"+str(yf_start_time)+"~"+"yf_end_time")
+            else:
+                #附加到data_dict中
+                data_dict['value'] = yf_rates
+                #数据入库
+                commons.insert_historical_original_data_to_db(symbol_name,yf_rates,interval,db)
+                result_list.append(data_dict)
         #拉取mt5数据的symbol数据
         if method == 'get_historical_data_from_mt5':
             #分钟级的逻辑
@@ -59,7 +63,15 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                 #结束时间等于开始时间
                 mt5_end_time = mt5_start_time
                 #拉取数据
-                mt5_rates.append(get_historical_data.get_historical_data_from_mt5(symbol_value,mt5.TIMEFRAME_M1,mt5_start_time,mt5_end_time,mt5_account,db,mt5)[0])
+                try:
+                    mt5_rates.append(get_historical_data.get_historical_data_from_mt5(symbol_value,mt5.TIMEFRAME_M1,mt5_start_time,mt5_end_time,mt5_account,db,mt5)[0])
+                except IndexError:
+                    print(symbol_value+":数据拉取失败"+str(mt5_start_time)+"~"+str(mt5_end_time))
+                else:
+                    #附加到data_dict中
+                    data_dict['value'] = mt5_rates
+                    #数据入库
+                    commons.insert_historical_original_data_to_db(symbol_name,mt5_rates,interval,db)
             #小时级的逻辑
             if interval == '1h':
                 #生成转换为mt5时区后的时间间隔并去掉秒和分钟，开始时间为上一小时
@@ -70,11 +82,15 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                 #结束时间等于开始时间
                 mt5_end_time = mt5_start_time
                 #拉取数据
-                mt5_rates.append(get_historical_data.get_historical_data_from_mt5(symbol_value,mt5.TIMEFRAME_H1,mt5_start_time,mt5_end_time,mt5_account,db,mt5)[0])
-            #附加到data_dict中
-            data_dict['value'] = mt5_rates
-            #数据入库
-            commons.insert_historical_original_data_to_db(symbol_name,mt5_rates,interval,db)
+                try:
+                    mt5_rates.append(get_historical_data.get_historical_data_from_mt5(symbol_value,mt5.TIMEFRAME_H1,mt5_start_time,mt5_end_time,mt5_account,db,mt5)[0])
+                except IndexError:
+                    print(symbol_value+":数据拉取失败"+str(mt5_start_time)+"~"+str(mt5_end_time))
+                else:
+                    #附加到data_dict中
+                    data_dict['value'] = mt5_rates
+                    #数据入库
+                    commons.insert_historical_original_data_to_db(symbol_name,mt5_rates,interval,db)
             result_list.append(data_dict)
         #从mt5拉取数据去生成的symbol数据,当前只有dxy，如果有需要就继续在此分支下添加if即可
         if method == 'originate_from_mt5':
@@ -98,11 +114,15 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                     #结束时间与开始时间相等
                     mt5_end_time = mt5_start_time
                 #拉取并计算dxy
-                dxy_rates = get_dxy_from_mt5(mt5_start_time,mt5_end_time,interval,mt5_account,db,mt5)
-                #附加到data_dict中
-                data_dict['value'] = dxy_rates
-                #数据入库
-                commons.insert_historical_original_data_to_db(symbol_value,dxy_rates,interval,db)
+                try:
+                    dxy_rates = get_dxy_from_mt5(mt5_start_time,mt5_end_time,interval,mt5_account,db,mt5)
+                except IndexError:
+                    print("dxy:数据拉取失败"+str(mt5_start_time)+"~"+str(mt5_end_time))
+                else:
+                    #附加到data_dict中
+                    data_dict['value'] = dxy_rates
+                    #数据入库
+                    commons.insert_historical_original_data_to_db(symbol_value,dxy_rates,interval,db)
             result_list.append(data_dict)
     print(datetime.datetime.now(),result_list)
     return result_list
