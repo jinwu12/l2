@@ -52,7 +52,7 @@ def yf_date_to_timestamp(date,timezone):
     stime_ts = time_to_timestamp(stime,timezone)
     #返回时间戳
     return stime_ts
-@retry(stop_max_attempt_number=3,wait_random_min=5,wait_random_max=10)
+@retry(stop_max_attempt_number=1,wait_random_min=5,wait_random_max=10)
 #从yfinance拉取指定时间周期内的数据，并且将时间标准化为时间戳
 def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
     # valid intervals: 1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo
