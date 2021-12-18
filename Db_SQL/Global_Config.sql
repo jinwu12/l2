@@ -28,8 +28,9 @@ CREATE TABLE `Tbl_symbol_method` (
   `method_name` varchar(128) NOT NULL COMMENT '获取该symbol的函数名称',
   `comments` text COMMENT '备注字段',
   `timezone` varchar(128) NOT NULL COMMENT '该symbol从该数据源拉取时所在的时区，用于计算时间戳',
+  `symbol_value` varchar(16) NOT NULL COMMENT '用于具体拉取该symbol数据时的标准化名称',
   PRIMARY KEY (`method_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -159,4 +160,4 @@ CREATE TABLE `sim_timezone_list` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-12-03 16:11:29
+-- Dump completed on 2021-12-18  3:28:13
