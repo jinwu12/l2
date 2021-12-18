@@ -4,3 +4,4 @@ MetaTrader5
 schedule
 loguru
 retrying
+apscheduler
