@@ -8,7 +8,7 @@ from libs  import get_realtime_data
 #获取对应的参数
 start = '2021-12-12'
 end = '2021-12-19'
-interval = '1m'
+interval = '1h'
 #mt5数据源专用账号
 mt5_account = '5348288'
 
@@ -42,6 +42,7 @@ for symbol_method in method_list:
         commons.insert_historical_original_data_to_db(symbol_name,mt5_rates,interval,db)
     #dxy历史数据入库
     if method == 'originate_from_mt5' and symbol_value == 'DXY_MT5':
+        print(symbol_value)
         dxy_rates = get_realtime_data.get_dxy_from_mt5(start,end,interval,mt5_account,db,mt5)
         #数据入库
         commons.insert_historical_original_data_to_db(symbol_name,dxy_rates,interval,db)

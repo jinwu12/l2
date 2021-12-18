@@ -43,7 +43,7 @@ def insert_historical_original_data_to_db(symbol_name,data_list,interval,db):
     source_data_cursor.execute(create_table_sql)
 
     #生成模版sql
-    insert_source_data_template_sql = 'insert into '+table_name+'(symbol_name,ts,price_open,price_hgih,price_low,price_closed) values(%s,%s,%s,%s,%s,%s)'
+    insert_source_data_template_sql = 'insert into '+table_name+'(symbol_name,ts,price_open,price_hgih,price_low,price_closed) values(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE price_open=VALUES(price_open), price_hgih=VALUES(price_hgih), price_low=VALUES(price_low), price_closed=VALUES(price_closed)'
 
     #通过executemany来批量执行语句
     n=source_data_cursor.executemany(insert_source_data_template_sql,data_list)
