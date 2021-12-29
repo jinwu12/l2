@@ -20,7 +20,9 @@ scheduler.add_job(
         day_of_week = 'sun',
         hour='23',
         minute='0-59',
-        args = ['1m',db,'5348288',mt5]
+        args = ['1m',db,'5348288',mt5],
+        max_instances=100,
+        misfire_grace_time=600
 )
 #小时级数据
 scheduler.add_job(
@@ -28,7 +30,9 @@ scheduler.add_job(
         trigger='cron',
         day_of_week = 'sun',
         hour='23',
-        args = ['1h',db,'5348288',mt5]
+        args = ['1h',db,'5348288',mt5],
+        max_instances=100,
+        misfire_grace_time=600
 )
 
 #周一0点～周五23点
@@ -39,7 +43,10 @@ scheduler.add_job(
         day_of_week = 'mon-fri',
         hour = '0-23',
         minute='0-59',
-        args = ['1m',db,'5348288',mt5]
+        args = ['1m',db,'5348288',mt5],
+        max_instances=100,
+        misfire_grace_time=600
+
 )
 #小时级数据
 scheduler.add_job(
@@ -47,7 +54,9 @@ scheduler.add_job(
         trigger='cron',
         day_of_week = 'mon-fri',
         hour = '0-23',
-        args = ['1h',db,'5348288',mt5]
+        args = ['1h',db,'5348288',mt5],
+        max_instances=100,
+        misfire_grace_time=600
 )
 
 #周六0点-周六3点
@@ -58,7 +67,9 @@ scheduler.add_job(
         day_of_week = 'sat',
         hour='0-3',
         minute='0-59',
-        args = ['1m',db,'5348288',mt5]
+        args = ['1m',db,'5348288',mt5],
+        max_instances=100,
+        misfire_grace_time=600
 )
 #小时级数据
 scheduler.add_job(
@@ -66,7 +77,9 @@ scheduler.add_job(
         trigger='cron',
         day_of_week = 'sat',
         hour='0-3',
-        args = ['1h',db,'5348288',mt5]
+        args = ['1h',db,'5348288',mt5],
+        max_instances=100,
+        misfire_grace_time=600
 )
 
 #启动调度器
