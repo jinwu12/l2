@@ -6,6 +6,7 @@ from decimal import Decimal
 #import MetaTrader5 as mt5
 from configparser import ConfigParser
 from retrying import retry
+import ssl
 
 
 #获取symbol对应拉取函数名称及对应时区
@@ -59,7 +60,12 @@ def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
     #根据symbol name获取拉取用的symbol value
     
     # 根据输入参数拉取原始数据
-    o_data = yf.download( tickers = symbol, interval = interval, start = start ,end = end)  
+    try:
+        o_data = yf.download( tickers = symbol, interval = interval, start = start ,end = end)
+    except (ssl.SSLEOFError,ssl.SSLError):
+        print(str(start)+"拉取"+symbol+"@interval:"+interval+"失败！")
+        return False
+
     #修改dataframe中的时间为时间戳并返回结果列表
     df = pd.DataFrame(o_data)
     result_list = []

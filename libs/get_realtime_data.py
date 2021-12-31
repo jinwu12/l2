@@ -201,6 +201,10 @@ def get_dxy_from_mt5(start,end,interval,account,db,mt5):
             #拉取开始时间这个时间戳的数据，开始和结束时间一致即可
             end_time = start_time
             for minute in range(0,delta_minute+1):
+                #清空这上一个周期内的symbols_rate_list
+                symbols_rate_list = []
+                #重置skip值，避免只要有一个货币对在一个时间点出现问题就一直跳过
+                skip = False
                 #遍历dxy_symbol_list,拉取这个时间周期的所有symbol报价,用于计算dxy
                 for symbol in dxy_symbol_list:
                     symbol_rates = get_historical_data.get_historical_data_from_mt5(symbol,mt5.TIMEFRAME_M1,start_time,end_time,account,db,mt5)
@@ -209,15 +213,16 @@ def get_dxy_from_mt5(start,end,interval,account,db,mt5):
                         symbols_rate_list.append(symbol_rates[0])
                     else:
                         #此处后续需要添加logging功能
-                        print(symbol+"在"+str(start_time)+"的数据缺失!")
+                        print(symbol+"在"+str(start_time)+"的数据缺失! @interval:"+interval)
                         skip = True
                         break
-                #每计算1分钟的dxy之后，需要将时间往前挪1分钟
+                #每拉取1个interval的symbol_rates之后，需要将时间往前挪1个interval;这一步必须得在判断skip为空之前做；否则就会导致外层intreval的循环一直卡在丢数据的那个点
                 start_time = start_time+ datetime.timedelta(minutes=1)
                 end_time = start_time
+                #只要有一个货币对在这一小时的数据为空，则跳过这一分钟的计算
+                if skip == True:
+                    continue
                 result_list.append(tuple(calculate_dxy(symbols_rate_list)))
-                #计算完毕后，清空这一个周期内的symbols_rate_list
-                symbols_rate_list = []
     
     if interval == '1h':
         #将起始时间的分钟及秒强制取0,向下取整
@@ -234,6 +239,10 @@ def get_dxy_from_mt5(start,end,interval,account,db,mt5):
             #拉取开始时间这个时间戳的数据，开始和结束时间一致即可
             end_time = start_time
             for hour in range(0,delta_hours+1):
+                #清空这上一个周期内的symbols_rate_list
+                symbols_rate_list = []
+                #重置skip值，避免只要有一个货币对在一个时间点出现问题就一直跳过
+                skip = False
                 #遍历dxy_symbol_list,拉取这个时间周期的所有symbol报价,用于计算dxy
                 for symbol in dxy_symbol_list:
                     symbol_rates = get_historical_data.get_historical_data_from_mt5(symbol,mt5.TIMEFRAME_H1,start_time,end_time,account,db,mt5)
@@ -242,19 +251,19 @@ def get_dxy_from_mt5(start,end,interval,account,db,mt5):
                         symbols_rate_list.append(symbol_rates[0])
                     else:
                         #此处后续需要添加logging功能
-                        print(symbol+"在"+str(start_time)+"的数据缺失!")
+                        print(symbol+"在"+str(start_time)+"的数据缺失! @interval:"+interval)
                         skip = True
                         break
+                #每拉取1个小时的symbol_rates之后，需要将时间往前挪1个interval;这一步必须得在判断skip为空之前做；否则就会导致外层intreval的循环一直卡在丢数据的那个点
+                start_time = start_time+ datetime.timedelta(hours=1)
+                end_time = start_time
                 #只要有一个货币对在这一小时的数据为空，则跳过这一小时的计算
                 if skip == True:
-                    break
+                    continue
                 #每小时计算一次dxy,并附加到结果列表中;需要注意的是，此处的最高价和最低价均不准确。
                 dxy_result_list = calculate_dxy(symbols_rate_list)
                 #将内层转为tuple，方便后续使用mysql connector的excutemany入库
                 result_list.append(tuple(dxy_result_list))
-                #每计算1个小时的dxy之后，需要将时间往前挪1小时
-                start_time = start_time+ datetime.timedelta(hours=1)
-                end_time = start_time
                 #计算完毕后，清空这一个周期内的symbols_rate_list
                 symbols_rate_list = []
     return result_list
