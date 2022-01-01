@@ -49,4 +49,11 @@ def insert_historical_original_data_to_db(symbol_name,data_list,interval,db):
     n=source_data_cursor.executemany(insert_source_data_template_sql,data_list)
     db.commit()
 
-    
+
+# 拉取Tbl_symbol_method全量的属性
+def get_all_symbol_attr(db):
+    cursor = db.cursor(dictionary=True)
+    sql = 'select method_id, symbol_name, method_name, timezone, \
+        symbol_value, contract_size, digits, 3point_price from Global_Config.Tbl_symbol_method'
+    cursor.execute(sql)
+    return cursor.fetchall()
