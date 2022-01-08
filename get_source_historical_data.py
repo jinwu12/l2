@@ -6,9 +6,9 @@ from libs  import get_realtime_data
 
 
 #获取对应的参数
-start = '2021-12-12'
-end = '2021-12-19'
-interval = '1h'
+start = '2021-12-26'
+end = '2022-01-01'
+interval = '1m'
 #mt5数据源专用账号
 mt5_account = '5348288'
 
