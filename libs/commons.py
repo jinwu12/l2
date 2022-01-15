@@ -2,10 +2,6 @@ import mysql.connector
 from configparser import ConfigParser
 import datetime
 
-#从Tbl_symbol_method拉取全量symbol属性,并存入字典，拼接成列表
-def get_all_symbol_attr(db):
-    symbol_attr_cursor = db.cursor()
-    symbol_attr_sql = 'select method_id,symbol_name,method_name,timezone,symbol_value,contract_size,digits,3point_price comments from Global_Config.Tbl_symbol_method'
 
 #根据symbol name获取对应的symbol values
 def get_symbol_value(symbol_name,db):
