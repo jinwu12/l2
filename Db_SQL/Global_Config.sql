@@ -33,7 +33,7 @@ CREATE TABLE `Tbl_symbol_method` (
   `digits` tinyint DEFAULT NULL COMMENT '该交易品类保留的小数位，由品类spec决定',
   `3point_price` decimal(12,10) DEFAULT NULL COMMENT '该symbol的3点取值，人为设置调整',
   PRIMARY KEY (`method_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -51,7 +51,7 @@ CREATE TABLE `account_info` (
   `account_pass` varchar(128) NOT NULL COMMENT '账号登陆密码',
   `desciption` text COMMENT '账号描述',
   PRIMARY KEY (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -68,7 +68,7 @@ CREATE TABLE `production_combinations_list` (
   `trading_symbol` varchar(256) NOT NULL COMMENT '实际进行交易的品类id列表，ALL为全部均可进行交易；多个交易品类以半角逗号分割；',
   `comments` text COMMENT '备注字段',
   PRIMARY KEY (`combination_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -83,7 +83,7 @@ CREATE TABLE `production_timezone_list` (
   `time_zone_name` varchar(32) NOT NULL COMMENT '时区名称',
   `time_zone` varchar(32) NOT NULL COMMENT '以UTC为准的时区，如UTC +3或UTC -5)',
   PRIMARY KEY (`time_zone_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -100,7 +100,7 @@ CREATE TABLE `sim_combinations_list` (
   `trading_symbol` varchar(256) NOT NULL COMMENT '实际进行交易的品类id列表，ALL为全部均可进行交易；多个交易品类以半角逗号分割；',
   `comments` text COMMENT '备注字段',
   PRIMARY KEY (`combination_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -118,7 +118,7 @@ CREATE TABLE `sim_symbol_list` (
   `3point_price` decimal(24,12) NOT NULL COMMENT '3点取值，最多到小数点后12位，包括小数点后最多支持总共24位数字',
   `comments` text COMMENT '备注字段',
   PRIMARY KEY (`symbol_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -133,7 +133,7 @@ CREATE TABLE `sim_timezone_list` (
   `time_zone_name` varchar(32) NOT NULL COMMENT '时区名称',
   `time_zone` varchar(32) NOT NULL COMMENT '以UTC为准的时区，如UTC +3或UTC -5)',
   PRIMARY KEY (`time_zone_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -151,7 +151,7 @@ CREATE TABLE `symbol_combinations` (
   `combination_3point_price` int NOT NULL DEFAULT '0' COMMENT '组合价格3点取值，默认为0（即为symbol数量*3）',
   `comments` text COMMENT '备注字段',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

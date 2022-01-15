@@ -29,7 +29,7 @@ CREATE TABLE `realtime_signal_template` (
   `priced` double NOT NULL COMMENT '该时间点的组合价格',
   `trading_signal` tinyint NOT NULL COMMENT '该组合价格所匹配的交易信号。具体交易信号请参考交易信号表',
   `cooments` text COMMENT '备注字段'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
