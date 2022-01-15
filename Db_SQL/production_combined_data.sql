@@ -16,6 +16,27 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `combined_symbol_original_data_template`
+--
+
+DROP TABLE IF EXISTS `combined_symbol_original_data_template`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `combined_symbol_original_data_template` (
+  `symbol_name` varchar(256) DEFAULT NULL,
+  `ts` bigint unsigned NOT NULL COMMENT '时间点数据均需要转换为unix timestamp后再入库',
+  `price_open` double NOT NULL COMMENT '开盘价',
+  `price_hgih` double NOT NULL COMMENT '最高价',
+  `price_low` double NOT NULL COMMENT '最低价',
+  `price_closed` double NOT NULL COMMENT '收盘价',
+  `comments` text COMMENT '备注字段',
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  UNIQUE KEY `unique_ts_symbol_price` (`symbol_name`,`ts`),
+  KEY `id` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `daily_combined_data_template`
 --
 
@@ -43,4 +64,4 @@ CREATE TABLE `daily_combined_data_template` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-12-31 15:35:23
+-- Dump completed on 2022-01-12 14:13:33
