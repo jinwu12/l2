@@ -1,6 +1,6 @@
--- MySQL dump 10.13  Distrib 8.0.27, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.27, for macos12.0 (arm64)
 --
--- Host: localhost    Database: Global_Config
+-- Host: db.weijianliao.com    Database: Global_Config
 -- ------------------------------------------------------
 -- Server version	8.0.27-0ubuntu0.20.04.1
 
@@ -52,23 +52,6 @@ CREATE TABLE `account_info` (
   `desciption` text COMMENT '账号描述',
   PRIMARY KEY (`account_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `production_combinations_list`
---
-
-DROP TABLE IF EXISTS `production_combinations_list`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `production_combinations_list` (
-  `combination_id` int unsigned NOT NULL AUTO_INCREMENT COMMENT '交易组合ID',
-  `combination_name` varchar(128) NOT NULL COMMENT '交易组合名称',
-  `symbol_list` varchar(256) NOT NULL COMMENT '品类组合列表，交易品类id组合，以半角逗号分隔',
-  `trading_symbol` varchar(256) NOT NULL COMMENT '实际进行交易的品类id列表，ALL为全部均可进行交易；多个交易品类以半角逗号分割；',
-  `comments` text COMMENT '备注字段',
-  PRIMARY KEY (`combination_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -150,8 +133,9 @@ CREATE TABLE `symbol_combinations` (
   `combined_method` varchar(64) NOT NULL COMMENT '组合价格匹配方式，strict_match或者best_effort_match',
   `combination_3point_price` int NOT NULL DEFAULT '0' COMMENT '组合价格3点取值，默认为0（即为symbol数量*3）',
   `comments` text COMMENT '备注字段',
+  `trading_symbol` varchar(256) NOT NULL COMMENT '该组合用于交易的品类，允许多个，用半角逗号分隔',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -163,4 +147,4 @@ CREATE TABLE `symbol_combinations` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-01-12 14:13:32
+-- Dump completed on 2022-01-14  0:20:27
