@@ -1,6 +1,6 @@
--- MySQL dump 10.13  Distrib 8.0.27, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.27, for macos12.0 (arm64)
 --
--- Host: localhost    Database: simunation_signal
+-- Host: db.weijianliao.com    Database: simunation_signal
 -- ------------------------------------------------------
 -- Server version	8.0.27-0ubuntu0.20.04.1
 
@@ -41,4 +41,4 @@ CREATE TABLE `realtime_signal_template` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-01-12 14:13:33
+-- Dump completed on 2022-01-14  0:20:33
