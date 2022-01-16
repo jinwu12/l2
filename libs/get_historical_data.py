@@ -7,7 +7,10 @@ from decimal import Decimal
 from configparser import ConfigParser
 from retrying import retry
 import ssl
+from libs import commons
 
+
+logger = commons.create_logger()
 
 #获取symbol对应拉取函数名称及对应时区
 def get_symbol_method(db):
@@ -61,9 +64,9 @@ def get_historical_data_from_yfinance(symbol,interval,start,end,timezone):
     
     # 根据输入参数拉取原始数据
     try:
-        o_data = yf.download( tickers = symbol, interval = interval, start = start ,end = end)
-    except (ssl.SSLEOFError,ssl.SSLError):
-        print(str(start)+"拉取"+symbol+"@interval:"+interval+"失败！")
+        o_data = yf.download(tickers=symbol, interval=interval, start=start, end=end)
+    except (ssl.SSLEOFError, ssl.SSLError):
+        logger.error("%s:拉取%s~%s@interval:%s失败", symbol, str(start), str(end), interval)
         return False
 
     #修改dataframe中的时间为时间戳并返回结果列表
@@ -117,13 +120,13 @@ def init_mt5_from_ini(mt5_user_id,mt5):
                         server=account_cfg.get(i,"account_server"),
                         password=account_cfg.get(i,"account_pass")
                         ):
-                        print("initialize() failed, error code =",mt5.last_error())
-                        return False
-                        quit()
+                    logger.error("initialize() failed, error code: %s", mt5.last_error())
+                    return False
+                    quit()
                 else:
                     return True
             else:
-                print("account id:"+mt5_user_id+" is not found!")
+                logger.error("account id [%s] is not found!", str(mt5_user_id))
                 return False
 
 

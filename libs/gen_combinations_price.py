@@ -20,11 +20,13 @@ def get_symbol_combinations(db,symbol_methods):
         #判断combination_name是否为空，如果为空则根据symbol_list拉取symbol_name，与combined_method组成新的combination_name，然后update数据库中的combination_name
         if combination_name == '':
             for symbol_id in symbol_list.split(','):
-                print(symbol_id,get_symbol_name_by_id(symbol_id,symbol_methods))
-                combination_name = combination_name+get_symbol_name_by_id(symbol_id,symbol_methods)[0][1]+'-'
+                # print(symbol_id, get_symbol_name_by_id(int(symbol_id), symbol_methods))
+                combination_name = combination_name + get_symbol_name_by_id(int(symbol_id), symbol_methods)[0][1] + '-'
+                # combination_name = combination_name+get_symbol_name_by_id(int(symbol_id), symbol_methods)
             combination_name = combination_name + combined_method
             #更新到db中
-            sql = 'update Global_Config.symbol_combinations set combination_name='+combination_name+' where id='+id
+            sql = 'update Global_Config.symbol_combinations set combination_name='+combination_name+' where id='+str(id)
+            print(sql)
             db_cursor.execute(sql)
             db.commit()
         #如果combination_3point_price为0，则运行calculate_combination_3point_price更新

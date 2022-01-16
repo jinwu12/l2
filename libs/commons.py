@@ -1,10 +1,39 @@
+import logging
+
 import mysql.connector
 from configparser import ConfigParser
 import datetime
 
 
+LOG_FORMAT = '%(asctime)s - %(name)s[%(filename)s:%(lineno)d] - %(levelname)s - %(message)s'
+# logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+log_map = {}
+
+
+
+# 创建日志对象
+def create_logger(name='app'):
+    logger = log_map.get(name)
+    if logger is None:
+        logger = logging.getLogger(name)
+        logger.setLevel(logging.INFO)
+        log_map[name] = logger
+        # 输出到日志文件
+        handler = logging.FileHandler(name+".txt")
+        handler.setLevel(logging.INFO)
+        handler.setFormatter(logging.Formatter(LOG_FORMAT))
+        logger.addHandler(handler)
+
+        # 将日志也输出到控制台上
+        console = logging.StreamHandler()
+        console.setFormatter(logging.Formatter(LOG_FORMAT))
+        console.setLevel(logging.DEBUG)
+        logger.addHandler(console)
+
+    return logger
+
 #根据symbol name获取对应的symbol values
-def get_symbol_value(symbol_name,db):
+def get_symbol_value(symbol_name, db):
     symbol_method_db = db
     symbol_method_db_cursor = symbol_method_db.cursor()
     #获取symbol name对应的symbol value，如果有多个则只返回第一个

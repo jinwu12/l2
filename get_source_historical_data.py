@@ -1,16 +1,22 @@
+import logging
+
 from libs import commons
 from libs import get_historical_data
 import sys
 import MetaTrader5 as mt5
-from libs  import get_realtime_data
+from libs import get_realtime_data
 
 
 #获取对应的参数
-start = '2021-12-26'
-end = '2022-01-01'
-interval = '1m'
+start = '2022-01-14'
+end = '2022-01-15'
+interval = '1h'
 #mt5数据源专用账号
 mt5_account = '5348288'
+
+# 日志配置
+logger = commons.create_logger()
+logger.info("初始化...")
 
 #获取symbol列表对应的method list
 db = commons.db_connect()
@@ -20,7 +26,7 @@ method_list = get_historical_data.get_symbol_method(db)
 for symbol_method in method_list:
     symbol_name = symbol_method[0]
     #根据symbol name获取对应拉取接口的symbol标准化名称
-    symbol_value = commons.get_symbol_value(symbol_name,db)
+    symbol_value = commons.get_symbol_value(symbol_name, db)
     method = symbol_method[1]
     timezone = symbol_method[2]
     yf_rates = []
