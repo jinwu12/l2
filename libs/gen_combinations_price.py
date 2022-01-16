@@ -25,7 +25,7 @@ def get_symbol_combinations(db,symbol_methods):
                 # combination_name = combination_name+get_symbol_name_by_id(int(symbol_id), symbol_methods)
             combination_name = combination_name + combined_method
             #更新到db中
-            sql = 'update Global_Config.symbol_combinations set combination_name='+combination_name+' where id='+str(id)
+            sql = 'update Global_Config.symbol_combinations set combination_name="'+combination_name+'" where id='+str(id)
             print(sql)
             db_cursor.execute(sql)
             db.commit()
