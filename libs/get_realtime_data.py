@@ -8,10 +8,10 @@ sys.path.append('..')
 from libs import get_historical_data
 from libs import commons
 
-
+logger = commons.create_logger()
 
 #封装入库实时数据schedule函数              
-def update_realtime_data(interval,db,mt5_account,mt5):                                             
+def update_realtime_data(interval,db,mt5_account,mt5):
     #初始化数据库连接
     db = commons.db_connect()
     method_list = get_historical_data.get_symbol_method(db)
@@ -43,9 +43,11 @@ def update_realtime_data(interval,db,mt5_account,mt5):
             #yfinance的分钟级及小时级数据拉取逻辑一致
             #拉取数据，并截取最后一个元素作为结果; 因为入库时executemany需要外侧是list+内层是tuple，所以此处需要用append而不能直接赋值
             try:
-                yf_rates.append(get_historical_data.get_historical_data_from_yfinance(symbol_value,interval,yf_start_time.strftime('%Y-%m-%d'),yf_end_time.strftime('%Y-%m-%d'),timezone)[-1])
+                yf_rates.append(get_historical_data.get_historical_data_from_yfinance(
+                    symbol_value, interval, yf_start_time.strftime('%Y-%m-%d'),
+                    yf_end_time.strftime('%Y-%m-%d'), timezone)[-1])
             except IndexError:
-                print(symbol_value+":数据拉取失败"+str(yf_start_time)+"~"+"yf_end_time")
+                logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
             else:
                 #附加到data_dict中
                 data_dict['value'] = yf_rates
@@ -66,7 +68,7 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                 try:
                     mt5_rates.append(get_historical_data.get_historical_data_from_mt5(symbol_value,mt5.TIMEFRAME_M1,mt5_start_time,mt5_end_time,mt5_account,db,mt5)[0])
                 except IndexError:
-                    print(symbol_value+":数据拉取失败"+str(mt5_start_time)+"~"+str(mt5_end_time))
+                    logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
                 else:
                     #附加到data_dict中
                     data_dict['value'] = mt5_rates
@@ -85,7 +87,7 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                 try:
                     mt5_rates.append(get_historical_data.get_historical_data_from_mt5(symbol_value,mt5.TIMEFRAME_H1,mt5_start_time,mt5_end_time,mt5_account,db,mt5)[0])
                 except IndexError:
-                    print(symbol_value+":数据拉取失败"+str(mt5_start_time)+"~"+str(mt5_end_time))
+                    logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
                 else:
                     #附加到data_dict中
                     data_dict['value'] = mt5_rates
@@ -117,14 +119,15 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                 try:
                     dxy_rates = get_dxy_from_mt5(mt5_start_time,mt5_end_time,interval,mt5_account,db,mt5)
                 except IndexError:
-                    print("dxy:数据拉取失败"+str(mt5_start_time)+"~"+str(mt5_end_time))
+                    logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
                 else:
                     #附加到data_dict中
                     data_dict['value'] = dxy_rates
                     #数据入库
                     commons.insert_historical_original_data_to_db(symbol_value,dxy_rates,interval,db)
             result_list.append(data_dict)
-    print(datetime.datetime.now(),result_list)
+    # print(datetime.datetime.now(), result_list)
+    logger.info("%s", result_list)
     return result_list
 
 
@@ -193,7 +196,7 @@ def get_dxy_from_mt5(start,end,interval,account,db,mt5):
         #获取起始时间的分钟差值
         delta_minute = int((time.mktime(time.strptime(end_rounding_time,"%Y-%m-%d %H:%M:%S"))-time.mktime(time.strptime(start_rounding_time,"%Y-%m-%d %H:%M:%S")))/60)
         if delta_minute < 0:
-            print("结束时间:"+end+"大于等于开始时间:"+start+"!请检查输入参数!")
+            logger.error("结束时间(%s)要大于等于开始时间(%s)，请检查输入参数是否正确!", end, start)
             exit()
         else:
             #初始化开始时间和结束时间
@@ -212,8 +215,7 @@ def get_dxy_from_mt5(start,end,interval,account,db,mt5):
                     if symbol_rates != []:
                         symbols_rate_list.append(symbol_rates[0])
                     else:
-                        #此处后续需要添加logging功能
-                        print(symbol+"在"+str(start_time)+"的数据缺失! @interval:"+interval)
+                        logger.error('%s在%s的数据缺失! @interval: %s', symbol, str(start_time), interval)
                         skip = True
                         break
                 #每拉取1个interval的symbol_rates之后，需要将时间往前挪1个interval;这一步必须得在判断skip为空之前做；否则就会导致外层intreval的循环一直卡在丢数据的那个点
@@ -231,7 +233,7 @@ def get_dxy_from_mt5(start,end,interval,account,db,mt5):
         #获取起始时间的小时差值
         delta_hours = int((time.mktime(time.strptime(end_rounding_time,"%Y-%m-%d %H:%M:%S"))-time.mktime(time.strptime(start_rounding_time,"%Y-%m-%d %H:%M:%S")))/3600)
         if delta_hours < 0:
-            print("结束时间:"+end+"大于等于开始时间:"+start+"!请检查输入参数!")
+            logger.error("结束时间(%s)要大于等于开始时间(%s)，请检查输入参数是否正确!", end, start)
             exit()
         else:
             #初始化开始时间和结束时间
@@ -250,8 +252,7 @@ def get_dxy_from_mt5(start,end,interval,account,db,mt5):
                     if symbol_rates != []:
                         symbols_rate_list.append(symbol_rates[0])
                     else:
-                        #此处后续需要添加logging功能
-                        print(symbol+"在"+str(start_time)+"的数据缺失! @interval:"+interval)
+                        logger.error('%s在%s的数据缺失! @interval: %s', symbol, str(start_time), interval)
                         skip = True
                         break
                 #每拉取1个小时的symbol_rates之后，需要将时间往前挪1个interval;这一步必须得在判断skip为空之前做；否则就会导致外层intreval的循环一直卡在丢数据的那个点

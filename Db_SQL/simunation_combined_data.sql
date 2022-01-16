@@ -31,7 +31,7 @@ CREATE TABLE `daily_combined_data_template` (
   `recorded_column` tinyint unsigned NOT NULL COMMENT '当前记录栏。0：不记录；1：次级回升栏；2：自然回升栏；3：上升趋势栏；4：下降趋势栏；5：自然回撤栏；6：次级回撤栏',
   `is_pivot` tinyint(1) NOT NULL COMMENT '该点是否关键点,1为是,0为否',
   `comments` text COMMENT '备注字段'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
