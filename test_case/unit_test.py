@@ -1,3 +1,4 @@
+import datetime
 import sys
 
 sys.path.append("..")
@@ -30,6 +31,20 @@ class TestFunctions(unittest.TestCase):
 
         result = gen_combinations_price.get_symbol_name_by_id(-1, data_list)
         self.assertEqual(0, len(result))
+
+    def test_get_lastest_price_before_dst_ts(self):
+        test_db = commons.db_connect()
+        dst_ts = 1640880000
+        result = commons.get_lastest_price_before_dst_ts(test_db, "1h", "DXY", dst_ts)
+        self.assertEqual("DX-Y.NYB", result[0])
+        self.assertEqual(dst_ts, result[1])
+        self.assertEqual(96.002, result[2])
+        self.assertEqual(96.078, result[3])
+        self.assertEqual(95.993, result[4])
+        self.assertEqual(96.069, result[5])
+
+        result = commons.get_lastest_price_before_dst_ts(test_db, "1h", "DXY", 0)
+        self.assertTrue(result is None)
 
 
 if __name__ == '__main__':

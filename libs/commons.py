@@ -64,10 +64,10 @@ def insert_historical_original_data_to_db(symbol_name,data_list,interval,db):
     source_data_db = db
     source_data_cursor = source_data_db.cursor()
     #根据symbol_name及interval生成table name,按月分表
-    today = datetime.datetime.today()
-    year = today.year
-    month=today.month
+    year = datetime.datetime.utcnow().year
+    month = datetime.datetime.utcnow().strftime("%m")
     table_name = 'original_data_source.'+symbol_name+'_'+interval+'_original_data_'+str(year)+str(month)
+    print(table_name)
     #建立对应数据表
     create_table_sql = 'create table IF NOT EXISTS '+table_name+'  like original_data_source.single_symbol_original_data_template'
     source_data_cursor.execute(create_table_sql)
@@ -87,3 +87,15 @@ def get_all_symbol_attr(db):
         symbol_value, contract_size, digits, 3point_price from Global_Config.Tbl_symbol_method'
     cursor.execute(sql)
     return cursor.fetchall()
+
+# 从db中拉取特定symbol到指定时间戳之前的最新报价
+def get_lastest_price_before_dst_ts(db, interval, symbol, dst_ts):
+    year_month_suffix = datetime.datetime.utcfromtimestamp(datetime.datetime.utcnow().timestamp()).strftime("%Y%m")
+    tbl = str.format("{}_{}_original_data_{}", symbol, interval, year_month_suffix)
+    sql = "select symbol_name, ts, price_open, price_hgih, price_low, price_closed from original_data_source.%s where ts<=%d order by ts desc limit 1" % (tbl, dst_ts)
+    cursor = db.cursor()
+    cursor.execute(sql)
+    result = cursor.fetchone()
+    return result
+
+
