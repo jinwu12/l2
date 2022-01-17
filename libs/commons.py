@@ -64,10 +64,10 @@ def insert_historical_original_data_to_db(symbol_name,data_list,interval,db):
     source_data_db = db
     source_data_cursor = source_data_db.cursor()
     #根据symbol_name及interval生成table name,按月分表
-    today = datetime.datetime.today()
-    year = today.year
-    month=today.month
+    year = datetime.datetime.utcnow().year
+    month = datetime.datetime.utcnow().strftime("%m")
     table_name = 'original_data_source.'+symbol_name+'_'+interval+'_original_data_'+str(year)+str(month)
+    print(table_name)
     #建立对应数据表
     create_table_sql = 'create table IF NOT EXISTS '+table_name+'  like original_data_source.single_symbol_original_data_template'
     source_data_cursor.execute(create_table_sql)
