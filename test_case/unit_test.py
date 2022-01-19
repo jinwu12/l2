@@ -47,5 +47,19 @@ class TestFunctions(unittest.TestCase):
         self.assertTrue(result is None)
 
 
+    def test_get_historical_symbol_rates_list(self):
+        test_db = commons.db_connect()
+        data = gen_combinations_price.get_historical_symbol_rates_list(test_db, '2021-12-04', '2022-01-15', '1h')
+        self.assertTrue(len(data) > 0)
+        for item in data:
+            ts = -1
+            for sub_item in item:   # 同list中的数据ts应该一致
+                cur_ts = sub_item.get('value')[1]
+                if ts < 0:
+                    ts = cur_ts
+                else:
+                    self.assertEqual(ts, cur_ts)
+
+
 if __name__ == '__main__':
     unittest.main()
