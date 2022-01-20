@@ -24,7 +24,7 @@ def insert_combined_orignal_data(db, combined_price_list):
         combination_3point_price = combined_price['combination_3point_price']
         interval = combined_price['interval']
         db_year_and_month = datetime.datetime.fromtimestamp(int(combined_price['combination_price'][1])).strftime('%Y%m')
-        key = combinaition_name + '_' + str(combination_id) + '_' + combined_method +   '_' + str(combination_3point_price) + '_' + interval + '_' + db_year_and_month
+        key = str(combination_id) + '_' + combined_method +   '_' + str(combination_3point_price) + '_' + interval + '_' + db_year_and_month
         if key not in key_list:
             #在存在新key的时候，将新key附到key_list中
             key_list.append(key)
