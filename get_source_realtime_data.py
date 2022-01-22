@@ -22,7 +22,7 @@ scheduler.add_job(
         minute='0-59',
         args = ['1m',db,'5348288',mt5],
         max_instances=100,
-        misfire_grace_time=600,
+        misfire_grace_time=60,
         coalesce=True
 )
 #小时级数据
@@ -33,7 +33,7 @@ scheduler.add_job(
         hour='23',
         args = ['1h',db,'5348288',mt5],
         max_instances=100,
-        misfire_grace_time=600,
+        misfire_grace_time=60,
         coalesce=True
 )
 
@@ -47,7 +47,7 @@ scheduler.add_job(
         minute='0-59',
         args = ['1m',db,'5348288',mt5],
         max_instances=100,
-        misfire_grace_time=600,
+        misfire_grace_time=60,
         coalesce=True
 
 )
@@ -59,7 +59,7 @@ scheduler.add_job(
         hour = '0-23',
         args = ['1h',db,'5348288',mt5],
         max_instances=100,
-        misfire_grace_time=600,
+        misfire_grace_time=60,
         coalesce=True
 )
 
@@ -73,7 +73,7 @@ scheduler.add_job(
         minute='0-59',
         args = ['1m',db,'5348288',mt5],
         max_instances=100,
-        misfire_grace_time=600,
+        misfire_grace_time=60,
         coalesce=True
 )
 #小时级数据
@@ -84,7 +84,7 @@ scheduler.add_job(
         hour='0-9',
         args = ['1h',db,'5348288',mt5],
         max_instances=100,
-        misfire_grace_time=600,
+        misfire_grace_time=60,
         coalesce=True
 )
 
