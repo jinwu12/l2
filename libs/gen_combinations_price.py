@@ -35,7 +35,7 @@ def insert_combined_orignal_data(db, combined_price_list):
         key_data_dict[key].append(tuple(combined_price['combination_price']))
     for key in key_list: 
         #生成模版sql
-        sql_template = 'insert into production_combined_data.' + key + '_combined_symbol_original_data(symbol_name,ts,price_open,price_hgih,price_low,price_closed) values(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE price_open=VALUES(price_open), price_hgih=VALUES(price_hgih), price_low=VALUES(price_low), price_closed=VALUES(price_closed)'
+        sql_template = 'insert into production_combined_data.' + key + '_combined_symbol_original_data(symbol_name,ts,price_open,price_high,price_low,price_closed) values(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE price_open=VALUES(price_open), price_high=VALUES(price_high), price_low=VALUES(price_low), price_closed=VALUES(price_closed)'
         #批量插入对应的表中
         cursor.executemany(sql_template, key_data_dict[key])
         db.commit()
@@ -145,7 +145,7 @@ def get_historical_symbol_rates_list(db, start, end, interval):
                 tbl = str.format("{}_{}_original_data_{}", symbol['symbol_name'], interval,
                                  datetime.datetime.utcfromtimestamp(the_date.timestamp()).strftime("%Y%m"))
                 # print(tbl)
-                sql = "select '%s', ts, price_open, price_hgih, price_low, price_closed from original_data_source.%s " \
+                sql = "select '%s', ts, price_open, price_high, price_low, price_closed from original_data_source.%s " \
                       "where ts between %d and %d order by ts" % (
                       symbol['symbol_value'], tbl, the_date.timestamp(), end_date.timestamp())
                 # print(the_date, sql)
