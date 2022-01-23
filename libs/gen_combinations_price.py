@@ -6,7 +6,43 @@ from dateutil.relativedelta import relativedelta
 
 from libs import commons
 
+from collections import defaultdict
+
 logger = commons.create_logger()
+
+#组合价格数据插入数据库
+#https://trello.com/c/PV7xwqBM
+def insert_combined_orignal_data(db, combined_price_list):
+    #根据combination_name-combination_id-combined_method-combination_3point_price-interval作为key并组成列表
+    cursor = db.cursor()
+    key_list = []
+    key_data_dict = defaultdict(list)
+    for combined_price in combined_price_list: 
+        combinaition_name = combined_price['combination_price'][0]
+        combination_id = combined_price['combination_id']
+        combined_method = combined_price['combined_method']
+        combination_3point_price = combined_price['combination_3point_price']
+        interval = combined_price['interval']
+        db_year_and_month = datetime.datetime.fromtimestamp(int(combined_price['combination_price'][1])).strftime('%Y%m')
+        key = str(combination_id) + '_' + combined_method +   '_' + str(combination_3point_price) + '_' + interval + '_' + db_year_and_month
+        if key not in key_list:
+            #在存在新key的时候，将新key附到key_list中
+            key_list.append(key)
+            #在存在新key的时候，生成对应的数据表
+            create_tbl_sql = 'create table  IF NOT EXISTS production_combined_data.' +  key + '_combined_symbol_original_data like production_combined_data.combined_symbol_original_data_template'
+            cursor.execute(create_tbl_sql)
+        #按照key来拼接所有的组合价格，生成待批量插入db的list，需要包含key信息
+        key_data_dict[key].append(tuple(combined_price['combination_price']))
+    for key in key_list: 
+        #生成模版sql
+        sql_template = 'insert into production_combined_data.' + key + '_combined_symbol_original_data(symbol_name,ts,price_open,price_high,price_low,price_closed) values(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE price_open=VALUES(price_open), price_high=VALUES(price_high), price_low=VALUES(price_low), price_closed=VALUES(price_closed)'
+        #批量插入对应的表中
+        cursor.executemany(sql_template, key_data_dict[key])
+        db.commit()
+
+     
+
+
 
 
 # 拉取全量组合
@@ -109,7 +145,7 @@ def get_historical_symbol_rates_list(db, start, end, interval):
                 tbl = str.format("{}_{}_original_data_{}", symbol['symbol_name'], interval,
                                  datetime.datetime.utcfromtimestamp(the_date.timestamp()).strftime("%Y%m"))
                 # print(tbl)
-                sql = "select '%s', ts, price_open, price_hgih, price_low, price_closed from original_data_source.%s " \
+                sql = "select '%s', ts, price_open, price_high, price_low, price_closed from original_data_source.%s " \
                       "where ts between %d and %d order by ts" % (
                       symbol['symbol_value'], tbl, the_date.timestamp(), end_date.timestamp())
                 # print(the_date, sql)

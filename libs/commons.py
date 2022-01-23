@@ -73,7 +73,7 @@ def insert_historical_original_data_to_db(symbol_name,data_list,interval,db):
     source_data_cursor.execute(create_table_sql)
 
     #生成模版sql
-    insert_source_data_template_sql = 'insert into '+table_name+'(symbol_name,ts,price_open,price_hgih,price_low,price_closed) values(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE price_open=VALUES(price_open), price_hgih=VALUES(price_hgih), price_low=VALUES(price_low), price_closed=VALUES(price_closed)'
+    insert_source_data_template_sql = 'insert into '+table_name+'(symbol_name,ts,price_open,price_high,price_low,price_closed) values(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE price_open=VALUES(price_open), price_high=VALUES(price_high), price_low=VALUES(price_low), price_closed=VALUES(price_closed)'
 
     #通过executemany来批量执行语句
     n=source_data_cursor.executemany(insert_source_data_template_sql,data_list)
@@ -92,7 +92,7 @@ def get_all_symbol_attr(db):
 def get_lastest_price_before_dst_ts(db, interval, symbol, dst_ts):
     year_month_suffix = datetime.datetime.utcfromtimestamp(datetime.datetime.utcnow().timestamp()).strftime("%Y%m")
     tbl = str.format("{}_{}_original_data_{}", symbol, interval, year_month_suffix)
-    sql = "select symbol_name, ts, price_open, price_hgih, price_low, price_closed from original_data_source.%s where ts<=%d order by ts desc limit 1" % (tbl, dst_ts)
+    sql = "select symbol_name, ts, price_open, price_high, price_low, price_closed from original_data_source.%s where ts<=%d order by ts desc limit 1" % (tbl, dst_ts)
     cursor = db.cursor()
     cursor.execute(sql)
     result = cursor.fetchone()
