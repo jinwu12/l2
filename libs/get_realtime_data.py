@@ -68,7 +68,7 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                 try:
                     mt5_rates.append(get_historical_data.get_historical_data_from_mt5(symbol_value,mt5.TIMEFRAME_M1,mt5_start_time,mt5_end_time,mt5_account,db,mt5)[0])
                 except IndexError:
-                    logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
+                    logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
                 else:
                     #附加到data_dict中
                     data_dict['value'] = mt5_rates
@@ -87,7 +87,7 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                 try:
                     mt5_rates.append(get_historical_data.get_historical_data_from_mt5(symbol_value,mt5.TIMEFRAME_H1,mt5_start_time,mt5_end_time,mt5_account,db,mt5)[0])
                 except IndexError:
-                    logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
+                    logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_start_time))
                 else:
                     #附加到data_dict中
                     data_dict['value'] = mt5_rates
@@ -119,7 +119,7 @@ def update_realtime_data(interval,db,mt5_account,mt5):
                 try:
                     dxy_rates = get_dxy_from_mt5(mt5_start_time,mt5_end_time,interval,mt5_account,db,mt5)
                 except IndexError:
-                    logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
+                    logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
                 else:
                     #附加到data_dict中
                     data_dict['value'] = dxy_rates
