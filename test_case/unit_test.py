@@ -61,5 +61,13 @@ class TestFunctions(unittest.TestCase):
                     self.assertEqual(ts, cur_ts)
 
 
+    def test_cal_comb_price_strict_match(self):
+        test_db = commons.db_connect()
+        data = gen_combinations_price.get_historical_symbol_rates_list(test_db, '2022-02-12 03:00:00',
+                                                                       '2022-02-12 04:59:59', '1h')
+        result = gen_combinations_price.cal_comb_price_strict_match(data, 1, test_db)
+        print(result)
+
+
 if __name__ == '__main__':
     unittest.main()
