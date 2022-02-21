@@ -4,15 +4,15 @@ import time
 import datetime
 
 
-# 今天的日期
-today = datetime.datetime.now().strftime("%Y-%m-%d")
+# 开始的日期,由于是取的0点，所以需要往前一天以防漏掉周六早上那几个小时的数据
+end = (datetime.datetime.now() + datetime.timedelta(days = 1)).strftime("%Y-%m-%d")
 # 七天前的日期
-SevenDayAgo = (datetime.datetime.now() - datetime.timedelta(days = 7))
+SevenDayAgo = (datetime.datetime.now() - datetime.timedelta(days = 6))
 # 转换为时间戳
 timeStamp = int(time.mktime(SevenDayAgo.timetuple()))
 # 转换为其他字符串格式
-SevenDayAgoStr = SevenDayAgo.strftime("%Y-%m-%d")
-print(today,SevenDayAgoStr)
+start = SevenDayAgo.strftime("%Y-%m-%d")
+print(start,end)
 
 
 #初始化后台调度器
@@ -25,7 +25,7 @@ scheduler.add_job(
         trigger='cron',
         day_of_week = 'sat',
         hour='12',
-        args = [SevenDayAgoStr, today, '1h'],
+        args = [start, end, '1h'],
         max_instances=100,
         misfire_grace_time=60,
         coalesce=True
@@ -36,7 +36,7 @@ scheduler.add_job(
         trigger='cron',
         day_of_week = 'sat',
         hour='13',
-        args = [SevenDayAgoStr, today, '1m'],
+        args = [start, end, '1m'],
         max_instances=100,
         misfire_grace_time=60,
         coalesce=True
