@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 
 from libs import commons
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 logger = commons.create_logger()
 
@@ -200,6 +200,7 @@ def get_historical_symbol_rates_list(db, start, end, interval):
 
 
 # 使用strict_match方式来使用传入的symbol_rates_list和combination生成组合价格
+# https://trello.com/c/oI5VMqx8
 def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
     db_cursor = db.cursor()
     sql = "select combination_name, symbol_list from Global_Config.symbol_combinations where id = %d" % symbol_combination_id
@@ -208,7 +209,7 @@ def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
     combination_name = sql_result[0]
     # print(sql_result[1][0])
     sql = "select symbol_name, `3point_price` from Global_Config.Tbl_symbol_method where method_id in (%s)" % \
-          sql_result[1][0]
+          sql_result[1]
     db_cursor.execute(sql)
     sql_result = db_cursor.fetchall()
     # print(sql_result)
@@ -227,7 +228,7 @@ def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
     # 检查对应组合中的symbol是否都有报价，并记录最小和最大的时间戳
     min_ts = -1  # 最小的时间戳
     max_ts = -1  # 最大的时间戳
-    symbol_price_list = []
+    ts_list = []
     for symbol in sql_result:
         # print("check=>", symbol[0])
         # 同symbol的，取最前的一条报价
@@ -245,6 +246,7 @@ def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
                     if item['interval'] == '1m':
                         interval = 60
                     ts = item['value'][1]
+                    ts_list.append(ts)
                     if min_ts == -1 or ts < min_ts:
                         min_ts = ts
                     if max_ts == -1 or ts > max_ts:
@@ -275,12 +277,15 @@ def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
         low_combo_price += price
     for price in closed_price_map.values():
         closed_combo_price += price
+    ts_counter = Counter(ts_list)
+    most_common_ts = ts_counter.most_common(1)[0][0]
+    # print(ts_list, ts_counter.most_common(1), ts_counter.most_common(1)[0][0])
     data = {
         'combination_id': symbol_combination_id, 'combined_method': 'strict_match',
         'symbol_3point_price': _3_point_price_map,
         'combination_3point_price': calculate_combination_3point_price(db, symbol_combination_id),
         'interval': '1m' if interval == 60 else '1h',
-        'combination_price': [combination_name, max_ts, open_combo_price, high_combo_price,
+        'combination_price': [combination_name, most_common_ts, open_combo_price, high_combo_price,
                               low_combo_price, closed_combo_price]
     }
     return True, data
