@@ -33,7 +33,7 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEqual(3.000000, symbol._3point_price)
 
     def test_xauusd(self):
-        item = XauUsd(symbol='XAUUSD', ts=1640970000, category='1h',
+        item = XauUsd(symbol='XAUUSD', ts=1640970000, interval='1h',
                       price_open=1822.42, price_high=1824.29, price_low=1820.38,
                       price_closed=1822)
         item.save()
