@@ -43,34 +43,42 @@ def make_transfer():
         database='original_data_source'
     )
 
+    # 创建表
+    data_source_db.create_tables([XauUsd, Dxy, DxyMt5, EurUsd, GbpUsd, Tnx, UsdCad, UsdChf, UsdJpy, UsdSek])
+
     cursor = db.cursor()
     sql = 'show tables'
     cursor.execute(sql)
     tables = cursor.fetchall()
     for table in tables:
         tbl = table[0]
-        if "XAUUSD_1h" in tbl and len(tbl[str.rindex(tbl, "_") + 1:]) == 6:  # 不处理表名不合法的
+        if ("_1h" in tbl or "_1m" in tbl) and len(tbl[str.rindex(tbl, "_") + 1:]) == 6:  # 不处理表名不合法的
             # 数据校验
-            if not verify_records(db, tbl, '1h'):
-                print("表数据校验失败：", tbl)
-                continue
+            # if not verify_records(db, tbl, '1h' if "_1h" in tbl else "1m"):
+                # print("表数据校验失败：", tbl)
+                # continue
             # 数据迁移
             data_cursor = db.cursor(dictionary=True)
             data_cursor.execute("select * from %s" % tbl)
             batch = []
+            logger.info("开始转移表: %s", tbl)
+            transfer_count = 0
             for record in data_cursor.fetchall():
-                print(record)
-                batch.append(dict(symbol='XAUUSD', category='1h', ts=record['ts'], price_open=record['price_open'],
-                                  price_high=record['price_high'], price_low=record['price_low'],
-                                  price_closed=record['price_closed']))
+                # print(record)
+                batch.append(dict(symbol='XAUUSD', category='1h' if "_1h" in tbl else "1m", ts=record['ts'],
+                                  price_open=record['price_open'], price_high=record['price_high'],
+                                  price_low=record['price_low'], price_closed=record['price_closed']))
                 if len(batch) >= 500:
                     with data_source_db.atomic():
                         XauUsd.insert_many(batch).execute()
+                    transfer_count += len(batch)
                     batch.clear()
             if len(batch) > 0:
                 with data_source_db.atomic():
                     XauUsd.insert_many(batch).execute()
+                transfer_count += len(batch)
                 batch.clear()
+            logger.info("表%s数据转移完成，共迁移%d条数据", tbl, transfer_count)
 
 
 if __name__ == '__main__':

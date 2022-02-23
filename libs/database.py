@@ -207,7 +207,3 @@ class UsdSek(Model):
     class Meta:
         database = data_source_db
         table_name = "usd_sek"
-
-
-# 创建表
-data_source_db.create_tables([XauUsd, Dxy, DxyMt5, EurUsd, GbpUsd, Tnx, UsdCad, UsdChf, UsdJpy, UsdSek])
