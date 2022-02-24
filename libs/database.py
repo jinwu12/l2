@@ -49,7 +49,14 @@ class Symbol(Model):
 data_source_db = MySQLDatabase('original_data_source', host=db_host, user=db_user, passwd=db_passwords, port=3306)
 
 
-class XauUsd(Model):
+# symbol行情数据基类
+class BaseSymbolPrice(Model):
+    class Meta:
+        database = data_source_db
+        legacy_table_names = False
+
+
+class XauUsd(BaseSymbolPrice):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -60,12 +67,8 @@ class XauUsd(Model):
     price_closed = DoubleField()
     comments = TextField()
 
-    class Meta:
-        database = data_source_db
-        table_name = "xau_usd"
 
-
-class Dxy(Model):
+class Dxy(BaseSymbolPrice):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -76,12 +79,8 @@ class Dxy(Model):
     price_closed = DoubleField()
     comments = TextField()
 
-    class Meta:
-        database = data_source_db
-        table_name = "dxy"
 
-
-class DxyMt5(Model):
+class DxyMt5(BaseSymbolPrice):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -92,12 +91,8 @@ class DxyMt5(Model):
     price_closed = DoubleField()
     comments = TextField()
 
-    class Meta:
-        database = data_source_db
-        table_name = "dxy_mt5"
 
-
-class EurUsd(Model):
+class EurUsd(BaseSymbolPrice):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -108,12 +103,8 @@ class EurUsd(Model):
     price_closed = DoubleField()
     comments = TextField()
 
-    class Meta:
-        database = data_source_db
-        table_name = "eur_usd"
 
-
-class GbpUsd(Model):
+class GbpUsd(BaseSymbolPrice):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -124,12 +115,8 @@ class GbpUsd(Model):
     price_closed = DoubleField()
     comments = TextField()
 
-    class Meta:
-        database = data_source_db
-        table_name = "gbp_usd"
 
-
-class Tnx(Model):
+class Tnx(BaseSymbolPrice):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -140,12 +127,8 @@ class Tnx(Model):
     price_closed = DoubleField()
     comments = TextField()
 
-    class Meta:
-        database = data_source_db
-        table_name = "tnx"
 
-
-class UsdCad(Model):
+class UsdCad(BaseSymbolPrice):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -156,12 +139,8 @@ class UsdCad(Model):
     price_closed = DoubleField()
     comments = TextField()
 
-    class Meta:
-        database = data_source_db
-        table_name = "usd_cad"
 
-
-class UsdChf(Model):
+class UsdChf(BaseSymbolPrice):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -172,12 +151,8 @@ class UsdChf(Model):
     price_closed = DoubleField()
     comments = TextField()
 
-    class Meta:
-        database = data_source_db
-        table_name = "usd_chf"
 
-
-class UsdJpy(Model):
+class UsdJpy(BaseSymbolPrice):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -188,12 +163,8 @@ class UsdJpy(Model):
     price_closed = DoubleField()
     comments = TextField()
 
-    class Meta:
-        database = data_source_db
-        table_name = "usd_jpy"
 
-
-class UsdSek(Model):
+class UsdSek(BaseSymbolPrice):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -203,7 +174,3 @@ class UsdSek(Model):
     price_low = DoubleField()
     price_closed = DoubleField()
     comments = TextField()
-
-    class Meta:
-        database = data_source_db
-        table_name = "usd_sek"

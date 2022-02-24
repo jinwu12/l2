@@ -7,6 +7,12 @@ from libs.database import *
 
 
 class DatabaseTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # 创建表
+        print("create tables...")
+        data_source_db.create_tables([XauUsd, Dxy, DxyMt5, EurUsd, GbpUsd, Tnx, UsdCad, UsdChf, UsdJpy, UsdSek])
+
     def test_account_query(self):
         accounts = AccountInfo.select()
         self.assertEqual(1, len(accounts))
