@@ -44,6 +44,17 @@ class DatabaseTestCase(unittest.TestCase):
                       price_closed=1822)
         item.save()
 
+    def test_dynamic_save(self):
+        count = XauUsd.select().count()
+        item = dict(symbol='XAUUSD', ts=1640970000, interval='1h', price_open=999.99, price_high=1824.29,
+                    price_low=1820.38, price_closed=1822)
+        items = [item, item, item]
+        batch_save(XauUsd, items, batch_size=2)
+        self.assertEqual(3 + count, XauUsd.select().count())
+        count = XauUsd.select().count()
+        save(XauUsd, item)
+        self.assertEqual(1 + count, XauUsd.select().count())
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -174,3 +174,21 @@ class UsdSek(BaseSymbolPrice):
     price_low = DoubleField()
     price_closed = DoubleField()
     comments = TextField()
+
+
+###############################################
+# 通用批量保存
+def batch_save(symbol_model, dict_data_list, batch_size=500):
+    while len(dict_data_list) > batch_size:
+        batch = dict_data_list[:batch_size]
+        with data_source_db.atomic():
+            getattr(symbol_model, "insert_many")(batch).execute()
+        dict_data_list = dict_data_list[batch_size:]
+    else:
+        with data_source_db.atomic():
+            getattr(symbol_model, "insert_many")(dict_data_list).execute()
+
+
+# 通用单个保存
+def save(symbol_model, dict_data):
+    getattr(symbol_model, "create")(**dict_data)
