@@ -49,10 +49,20 @@ class DatabaseTestCase(unittest.TestCase):
         item = dict(symbol='XAUUSD', ts=1640970000, interval='1h', price_open=999.99, price_high=1824.29,
                     price_low=1820.38, price_closed=1822)
         items = [item, item, item]
-        batch_save(XauUsd, items, batch_size=2)
-        self.assertEqual(3 + count, XauUsd.select().count())
+
+        batch_save_by_model(XauUsd, items, batch_size=2)
+        self.assertEqual(len(items) + count, XauUsd.select().count())
+
         count = XauUsd.select().count()
-        save(XauUsd, item)
+        batch_save_by_symbol('XAUUSD', items, batch_size=2)
+        self.assertEqual(len(items) + count, XauUsd.select().count())
+
+        count = XauUsd.select().count()
+        save_by_model(XauUsd, item)
+        self.assertEqual(1 + count, XauUsd.select().count())
+
+        count = XauUsd.select().count()
+        save_by_symbol(item)
         self.assertEqual(1 + count, XauUsd.select().count())
 
 
