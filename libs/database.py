@@ -1,7 +1,9 @@
 from configparser import ConfigParser
 
+from abc import abstractmethod
 from peewee import *
 import mysql.connector
+from libs import commons
 
 cfg = ConfigParser()
 cfg.read('./config.ini')
@@ -49,7 +51,8 @@ class Symbol(Model):
 data_source_db = MySQLDatabase('original_data_source', host=db_host, user=db_user, passwd=db_passwords, port=3306)
 
 
-class XauUsd(Model):
+# symbol行情数据基类
+class BaseSymbolPrice(Model):
     id = AutoField(column_name="id", primary_key=True)
     symbol = CharField(column_name="symbol_name", max_length=256)
     ts = TimestampField(index=True)
@@ -60,150 +63,112 @@ class XauUsd(Model):
     price_closed = DoubleField()
     comments = TextField()
 
-    class Meta:
-        database = data_source_db
-        table_name = "xau_usd"
-
-
-class Dxy(Model):
-    id = AutoField(column_name="id", primary_key=True)
-    symbol = CharField(column_name="symbol_name", max_length=256)
-    ts = TimestampField(index=True)
-    interval = CharField(column_name="interval", max_length=4, index=True)
-    price_open = DoubleField()
-    price_high = DoubleField()
-    price_low = DoubleField()
-    price_closed = DoubleField()
-    comments = TextField()
+    @classmethod
+    def getSymbol(self):
+        pass
 
     class Meta:
         database = data_source_db
-        table_name = "dxy"
+        legacy_table_names = False
 
 
-class DxyMt5(Model):
-    id = AutoField(column_name="id", primary_key=True)
-    symbol = CharField(column_name="symbol_name", max_length=256)
-    ts = TimestampField(index=True)
-    interval = CharField(column_name="interval", max_length=4, index=True)
-    price_open = DoubleField()
-    price_high = DoubleField()
-    price_low = DoubleField()
-    price_closed = DoubleField()
-    comments = TextField()
-
-    class Meta:
-        database = data_source_db
-        table_name = "dxy_mt5"
+class XauUsd(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(self):
+        return "XAUUSD"
 
 
-class EurUsd(Model):
-    id = AutoField(column_name="id", primary_key=True)
-    symbol = CharField(column_name="symbol_name", max_length=256)
-    ts = TimestampField(index=True)
-    interval = CharField(column_name="interval", max_length=4, index=True)
-    price_open = DoubleField()
-    price_high = DoubleField()
-    price_low = DoubleField()
-    price_closed = DoubleField()
-    comments = TextField()
-
-    class Meta:
-        database = data_source_db
-        table_name = "eur_usd"
+class Dxy(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(self):
+        return "DXY"
 
 
-class GbpUsd(Model):
-    id = AutoField(column_name="id", primary_key=True)
-    symbol = CharField(column_name="symbol_name", max_length=256)
-    ts = TimestampField(index=True)
-    interval = CharField(column_name="interval", max_length=4, index=True)
-    price_open = DoubleField()
-    price_high = DoubleField()
-    price_low = DoubleField()
-    price_closed = DoubleField()
-    comments = TextField()
-
-    class Meta:
-        database = data_source_db
-        table_name = "gbp_usd"
+class DxyMt5(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(self):
+        return "DXY_MT5"
 
 
-class Tnx(Model):
-    id = AutoField(column_name="id", primary_key=True)
-    symbol = CharField(column_name="symbol_name", max_length=256)
-    ts = TimestampField(index=True)
-    interval = CharField(column_name="interval", max_length=4, index=True)
-    price_open = DoubleField()
-    price_high = DoubleField()
-    price_low = DoubleField()
-    price_closed = DoubleField()
-    comments = TextField()
-
-    class Meta:
-        database = data_source_db
-        table_name = "tnx"
+class EurUsd(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(self):
+        return "EURUSD"
 
 
-class UsdCad(Model):
-    id = AutoField(column_name="id", primary_key=True)
-    symbol = CharField(column_name="symbol_name", max_length=256)
-    ts = TimestampField(index=True)
-    interval = CharField(column_name="interval", max_length=4, index=True)
-    price_open = DoubleField()
-    price_high = DoubleField()
-    price_low = DoubleField()
-    price_closed = DoubleField()
-    comments = TextField()
-
-    class Meta:
-        database = data_source_db
-        table_name = "usd_cad"
+class GbpUsd(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(self):
+        return "GBPUSD"
 
 
-class UsdChf(Model):
-    id = AutoField(column_name="id", primary_key=True)
-    symbol = CharField(column_name="symbol_name", max_length=256)
-    ts = TimestampField(index=True)
-    interval = CharField(column_name="interval", max_length=4, index=True)
-    price_open = DoubleField()
-    price_high = DoubleField()
-    price_low = DoubleField()
-    price_closed = DoubleField()
-    comments = TextField()
-
-    class Meta:
-        database = data_source_db
-        table_name = "usd_chf"
+class Tnx(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(self):
+        return "TNX"
 
 
-class UsdJpy(Model):
-    id = AutoField(column_name="id", primary_key=True)
-    symbol = CharField(column_name="symbol_name", max_length=256)
-    ts = TimestampField(index=True)
-    interval = CharField(column_name="interval", max_length=4, index=True)
-    price_open = DoubleField()
-    price_high = DoubleField()
-    price_low = DoubleField()
-    price_closed = DoubleField()
-    comments = TextField()
-
-    class Meta:
-        database = data_source_db
-        table_name = "usd_jpy"
+class UsdCad(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(self):
+        return "USDCAD"
 
 
-class UsdSek(Model):
-    id = AutoField(column_name="id", primary_key=True)
-    symbol = CharField(column_name="symbol_name", max_length=256)
-    ts = TimestampField(index=True)
-    interval = CharField(column_name="interval", max_length=4, index=True)
-    price_open = DoubleField()
-    price_high = DoubleField()
-    price_low = DoubleField()
-    price_closed = DoubleField()
-    comments = TextField()
+class UsdChf(BaseSymbolPrice):
+    def getSymbol(self):
+        return "USDCHF"
 
-    class Meta:
-        database = data_source_db
-        table_name = "usd_sek"
+
+class UsdJpy(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(self):
+        return "USDJPY"
+
+
+class UsdSek(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(self):
+        return "USDSEK"
+
+
+###############################################
+# 通用批量保存
+def batch_save_by_model(symbol_model, dict_data_list, batch_size=500):
+    while len(dict_data_list) > batch_size:
+        batch = dict_data_list[:batch_size]
+        with data_source_db.atomic():
+            getattr(symbol_model, "insert_many")(batch).execute()
+        dict_data_list = dict_data_list[batch_size:]
+    else:
+        with data_source_db.atomic():
+            getattr(symbol_model, "insert_many")(dict_data_list).execute()
+
+
+# 通用批量保存
+def batch_save_by_symbol(symbol, dict_data_list, batch_size=500):
+    valid = False
+    for sc in BaseSymbolPrice.__subclasses__():
+        if symbol == getattr(sc, "getSymbol")():
+            valid = True
+            batch_save_by_model(sc, dict_data_list, batch_size)
+            break
+    if not valid:
+        raise Exception("symbol没有对应的Model:" + symbol)
+
+
+# 通用单个保存
+def save_by_model(symbol_model, dict_data):
+    getattr(symbol_model, "create")(**dict_data)
+
+
+# 通用单个保存
+def save_by_symbol(dict_data):
+    valid = False
+    symbol = dict_data['symbol']
+    for sc in BaseSymbolPrice.__subclasses__():
+        if symbol == getattr(sc, "getSymbol")():
+            valid = True
+            save_by_model(sc, dict_data)
+            break
+    if not valid:
+        raise Exception("symbol没有对应的Model:" + symbol)

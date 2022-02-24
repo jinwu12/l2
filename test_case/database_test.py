@@ -7,6 +7,12 @@ from libs.database import *
 
 
 class DatabaseTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # 创建表
+        print("create tables...")
+        data_source_db.create_tables([XauUsd, Dxy, DxyMt5, EurUsd, GbpUsd, Tnx, UsdCad, UsdChf, UsdJpy, UsdSek])
+
     def test_account_query(self):
         accounts = AccountInfo.select()
         self.assertEqual(1, len(accounts))
@@ -37,6 +43,27 @@ class DatabaseTestCase(unittest.TestCase):
                       price_open=1822.42, price_high=1824.29, price_low=1820.38,
                       price_closed=1822)
         item.save()
+
+    def test_dynamic_save(self):
+        count = XauUsd.select().count()
+        item = dict(symbol='XAUUSD', ts=1640970000, interval='1h', price_open=999.99, price_high=1824.29,
+                    price_low=1820.38, price_closed=1822)
+        items = [item, item, item]
+
+        batch_save_by_model(XauUsd, items, batch_size=2)
+        self.assertEqual(len(items) + count, XauUsd.select().count())
+
+        count = XauUsd.select().count()
+        batch_save_by_symbol('XAUUSD', items, batch_size=2)
+        self.assertEqual(len(items) + count, XauUsd.select().count())
+
+        count = XauUsd.select().count()
+        save_by_model(XauUsd, item)
+        self.assertEqual(1 + count, XauUsd.select().count())
+
+        count = XauUsd.select().count()
+        save_by_symbol(item)
+        self.assertEqual(1 + count, XauUsd.select().count())
 
 
 if __name__ == '__main__':

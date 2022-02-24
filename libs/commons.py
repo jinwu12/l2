@@ -2,8 +2,9 @@ import logging
 
 import mysql.connector
 from configparser import ConfigParser
-import datetime
+from datetime import datetime
 
+import pytz
 
 LOG_FORMAT = '%(asctime)s - %(name)s[%(filename)s:%(lineno)d] - %(levelname)s - %(message)s'
 # logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
@@ -32,11 +33,27 @@ def create_logger(name='app'):
 
     return logger
 
-#根据symbol name获取对应的symbol values
+
+# 将指定时区的时间文本转化为utc时区的unix时间戳，以便存入db：2022-02-16 09:36:00, "US/Eastern"
+def datetime_to_timestamp(datetime_str, timezone):
+    return int(pytz.timezone(timezone).localize(datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')).timestamp())
+
+
+# 将时间戳转换为时间文本，以便展示或查看
+def timestamp_to_datetime_str(timestamp, timezone, format='%Y-%m-%d %H:%M:%S%z'):
+    return datetime.fromtimestamp(timestamp, pytz.timezone(timezone)).strftime(format)
+
+
+# 将带时区的日期时间文本转换为时间戳: 2022-02-16 09:36:00-05:00 -> 1645022160
+def datetime_str_with_timezone_to_timestamp(time):
+    return datetime.strptime(time, '%Y-%m-%d %H:%M:%S%z').timestamp()
+
+
+# 根据symbol name获取对应的symbol values
 def get_symbol_value(symbol_name, db):
     symbol_method_db = db
     symbol_method_db_cursor = symbol_method_db.cursor()
-    #获取symbol name对应的symbol value，如果有多个则只返回第一个
+    # 获取symbol name对应的symbol value，如果有多个则只返回第一个
     get_first_symbol_value = 'select symbol_value from Global_Config.Tbl_symbol_method where symbol_name=\''+symbol_name+'\''
     symbol_method_db_cursor.execute(get_first_symbol_value)
     return symbol_method_db_cursor.fetchall()[0][0]
@@ -64,8 +81,8 @@ def insert_historical_original_data_to_db(symbol_name,data_list,interval,db):
     source_data_db = db
     source_data_cursor = source_data_db.cursor()
     #根据symbol_name及interval生成table name,按月分表
-    year = datetime.datetime.utcnow().year
-    month = datetime.datetime.utcnow().strftime("%m")
+    year = datetime.utcnow().year
+    month = datetime.utcnow().strftime("%m")
     table_name = 'original_data_source.'+symbol_name+'_'+interval+'_original_data_'+str(year)+str(month)
     print(table_name)
     #建立对应数据表
@@ -90,7 +107,7 @@ def get_all_symbol_attr(db):
 
 # 从db中拉取特定symbol到指定时间戳之前的最新报价
 def get_lastest_price_before_dst_ts(db, interval, symbol, dst_ts):
-    year_month_suffix = datetime.datetime.utcfromtimestamp(datetime.datetime.utcnow().timestamp()).strftime("%Y%m")
+    year_month_suffix = datetime.utcfromtimestamp(datetime.utcnow().timestamp()).strftime("%Y%m")
     tbl = str.format("{}_{}_original_data_{}", symbol, interval, year_month_suffix)
     sql = "select symbol_name, ts, price_open, price_high, price_low, price_closed from original_data_source.%s where ts<=%d order by ts desc limit 1" % (tbl, dst_ts)
     cursor = db.cursor()
