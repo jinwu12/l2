@@ -132,7 +132,7 @@ class UsdSek(BaseSymbolPrice):
 
 
 ###############################################
-# 通用批量保存
+# 通用批量保存，保存对象以字典列表形式传入
 def batch_save_by_model(symbol_model, dict_data_list, batch_size=500):
     while len(dict_data_list) > batch_size:
         batch = dict_data_list[:batch_size]
@@ -144,7 +144,7 @@ def batch_save_by_model(symbol_model, dict_data_list, batch_size=500):
             getattr(symbol_model, "insert_many")(dict_data_list).execute()
 
 
-# 通用批量保存
+# 通用批量保存，保存对象以字典列表形式传入
 def batch_save_by_symbol(symbol, dict_data_list, batch_size=500):
     valid = False
     for sc in BaseSymbolPrice.__subclasses__():
@@ -156,12 +156,12 @@ def batch_save_by_symbol(symbol, dict_data_list, batch_size=500):
         raise Exception("symbol没有对应的Model:" + symbol)
 
 
-# 通用单个保存
+# 通用单个保存，保存对象以字典形式传入
 def save_by_model(symbol_model, dict_data):
     getattr(symbol_model, "create")(**dict_data)
 
 
-# 通用单个保存
+# 通用单个保存，保存对象以字典形式传入
 def save_by_symbol(dict_data):
     valid = False
     symbol = dict_data['symbol']
