@@ -5,6 +5,7 @@ import pytz
 import math
 
 import pandas as pd
+from retrying import retry
 
 from libs.database import *
 import yfinance as yf
@@ -14,6 +15,7 @@ logger = commons.create_logger()
 
 
 # 从yfinance拉取指定时间周期内的数据，并且将时间标准化为时间戳
+@retry(stop_max_attempt_number=3, wait_random_min=5, wait_random_max=10)
 def get_historical_data_from_yfinance(symbol, interval, start, end, timezone):
     # valid intervals: 1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo
     # 根据symbol name获取拉取用的symbol value
@@ -103,9 +105,8 @@ def update_realtime_data(interval):
             yf_tz = pytz.timezone(timezone)
             yf_start_time = yf_tz.localize(datetime.datetime.now())
             yf_end_time = yf_start_time + timedelta(days=1)
-            # 将method附加到结果中
             # yfinance的分钟级及小时级数据拉取逻辑一致
-            # 拉取数据，并截取最后一个元素作为结果; 因为入库时executemany需要外侧是list+内层是tuple，所以此处需要用append而不能直接赋值
+            # 拉取数据，并截取最后一个元素作为结果
             try:
                 yf_rates.append(get_historical_data_from_yfinance(
                     symbol_value, interval, yf_start_time, yf_end_time, timezone)[-1])
@@ -209,7 +210,7 @@ def calculate_dxy(symbols_rate_list):
         'USDSEK': 0.042,
         'USDCHF': 0.036
     }
-    # 遍历所有货币对报价，计算没有
+    # 遍历所有货币对报价
     for symbol_rate in symbols_rate_list:
         # 初始化dxy_rate_list，列表元素第一个为symbol名称、第二个为时间戳、第三个为开盘价、第四个为最高价、第五个为最低价、第六个为收盘价
         symbol_name = symbol_rate['symbol']
