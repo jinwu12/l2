@@ -64,7 +64,7 @@ class BaseSymbolPrice(Model):
     comments = TextField()
 
     @classmethod
-    def getSymbol(self):
+    def getSymbol(cls):
         pass
 
     class Meta:
@@ -74,60 +74,61 @@ class BaseSymbolPrice(Model):
 
 class XauUsd(BaseSymbolPrice):
     @classmethod
-    def getSymbol(self):
+    def getSymbol(cls):
         return "XAUUSD"
 
 
 class Dxy(BaseSymbolPrice):
     @classmethod
-    def getSymbol(self):
+    def getSymbol(cls):
         return "DXY"
 
 
 class DxyMt5(BaseSymbolPrice):
     @classmethod
-    def getSymbol(self):
+    def getSymbol(cls):
         return "DXY_MT5"
 
 
 class EurUsd(BaseSymbolPrice):
     @classmethod
-    def getSymbol(self):
+    def getSymbol(cls):
         return "EURUSD"
 
 
 class GbpUsd(BaseSymbolPrice):
     @classmethod
-    def getSymbol(self):
+    def getSymbol(cls):
         return "GBPUSD"
 
 
 class Tnx(BaseSymbolPrice):
     @classmethod
-    def getSymbol(self):
+    def getSymbol(cls):
         return "TNX"
 
 
 class UsdCad(BaseSymbolPrice):
     @classmethod
-    def getSymbol(self):
+    def getSymbol(cls):
         return "USDCAD"
 
 
 class UsdChf(BaseSymbolPrice):
-    def getSymbol(self):
+    @classmethod
+    def getSymbol(cls):
         return "USDCHF"
 
 
 class UsdJpy(BaseSymbolPrice):
     @classmethod
-    def getSymbol(self):
+    def getSymbol(cls):
         return "USDJPY"
 
 
 class UsdSek(BaseSymbolPrice):
     @classmethod
-    def getSymbol(self):
+    def getSymbol(cls):
         return "USDSEK"
 
 
