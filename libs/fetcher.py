@@ -282,7 +282,7 @@ def get_dxy_from_mt5(start, end, interval):
                         skip = True
                         break
 
-                # 只要有一个货币对在这一小时的数据为空，则跳过这一分钟的计算
+                # 只要有一个货币对在这一分钟的数据为空，则跳过这一分钟的计算
                 if skip:
                     continue
                 result_list.append(calculate_dxy(symbols_rate_list))
