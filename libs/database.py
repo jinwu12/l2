@@ -105,7 +105,7 @@ class GbpUsd(BaseSymbolPrice):
 class Tnx(BaseSymbolPrice):
     @classmethod
     def getSymbol(cls):
-        return "TNX"
+        return "^TNX"
 
 
 class UsdCad(BaseSymbolPrice):
