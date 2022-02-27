@@ -182,7 +182,7 @@ def update_realtime_data(interval):
                     mt5_end_time = mt5_start_time
                 # 拉取并计算dxy
                 try:
-                    dxy_rates = get_dxy_from_mt5(mt5_start_time, mt5_end_time)
+                    dxy_rates = get_dxy_from_mt5(mt5_start_time, mt5_end_time, interval)
                 except IndexError:
                     logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
                 else:
