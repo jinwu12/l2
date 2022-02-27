@@ -65,7 +65,7 @@ def make_transfer():
             transfer_count = 0
             for record in data_cursor.fetchall():
                 # print(record)
-                batch.append(dict(symbol='XAUUSD', interval='1h' if "_1h" in tbl else "1m", ts=record['ts'],
+                batch.append(dict(symbol=record['symbol_name'], interval='1h' if "_1h" in tbl else "1m", ts=record['ts'],
                                   price_open=record['price_open'], price_high=record['price_high'],
                                   price_low=record['price_low'], price_closed=record['price_closed']))
                 if len(batch) >= 500:
