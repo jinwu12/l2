@@ -81,13 +81,13 @@ class XauUsd(BaseSymbolPrice):
 class Dxy(BaseSymbolPrice):
     @classmethod
     def getSymbol(cls):
-        return "DXY"
+        return "DX-Y.NYB"
 
 
 class DxyMt5(BaseSymbolPrice):
     @classmethod
     def getSymbol(cls):
-        return "DXY_MT5"
+        return "DXY"
 
 
 class EurUsd(BaseSymbolPrice):
