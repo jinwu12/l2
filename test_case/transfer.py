@@ -65,17 +65,17 @@ def make_transfer():
             transfer_count = 0
             for record in data_cursor.fetchall():
                 # print(record)
-                batch.append(dict(symbol='XAUUSD', interval='1h' if "_1h" in tbl else "1m", ts=record['ts'],
+                batch.append(dict(symbol=record['symbol_name'], interval='1h' if "_1h" in tbl else "1m", ts=record['ts'],
                                   price_open=record['price_open'], price_high=record['price_high'],
                                   price_low=record['price_low'], price_closed=record['price_closed']))
                 if len(batch) >= 500:
                     with data_source_db.atomic():
-                        XauUsd.insert_many(batch).execute()
+                        batch_save_by_symbol(batch[0]['symbol'], batch)
                     transfer_count += len(batch)
                     batch.clear()
             if len(batch) > 0:
                 with data_source_db.atomic():
-                    XauUsd.insert_many(batch).execute()
+                    batch_save_by_symbol(batch[0]['symbol'], batch)
                 transfer_count += len(batch)
                 batch.clear()
             logger.info("表%s数据转移完成，共迁移%d条数据", tbl, transfer_count)
