@@ -103,7 +103,7 @@ def update_realtime_data(interval):
         if method == 'get_historical_data_from_yfinance':
             # 生成时间间隔，必需按照时区转换时间后，按照隔日进行拉取
             yf_tz = pytz.timezone(timezone)
-            yf_start_time = yf_tz.localize(datetime.datetime.now())
+            yf_start_time = yf_tz.localize(datetime.now())
             yf_end_time = yf_start_time + timedelta(days=1)
             # yfinance的分钟级及小时级数据拉取逻辑一致
             # 拉取数据，并截取最后一个元素作为结果
@@ -125,7 +125,7 @@ def update_realtime_data(interval):
             if interval == '1m':
                 # 生成转换为mt5时区后的时间间隔并去掉秒，开始时间为上一分钟
                 mt5_tz = pytz.timezone(timezone)
-                current_time = datetime.datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M')
+                current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M')
                 mt5_start_time = pd.to_datetime(current_time) - timedelta(minutes=1)
                 # 结束时间等于开始时间
                 mt5_end_time = mt5_start_time
@@ -143,7 +143,7 @@ def update_realtime_data(interval):
             if interval == '1h':
                 # 生成转换为mt5时区后的时间间隔并去掉秒和分钟，开始时间为上一小时
                 mt5_tz = pytz.timezone(timezone)
-                current_time = datetime.datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H')
+                current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H')
                 # 开始时间为上一个小时
                 mt5_start_time = pd.to_datetime(current_time) - timedelta(hours=1)
                 # 结束时间等于开始时间
@@ -167,7 +167,7 @@ def update_realtime_data(interval):
                 if interval == '1m':
                     # 生成转换为mt5时区后的时间间隔并去掉秒，开始时间为上一分钟
                     mt5_tz = pytz.timezone(timezone)
-                    current_time = datetime.datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M')
+                    current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M')
                     mt5_start_time = pd.to_datetime(current_time) - timedelta(minutes=1)
                     # 结束时间与开始时间相等
                     mt5_end_time = mt5_start_time
@@ -175,7 +175,7 @@ def update_realtime_data(interval):
                 if interval == '1h':
                     # 生成转换为mt5时区后的时间间隔并去掉秒和分钟，开始时间为上一小时
                     mt5_tz = pytz.timezone(timezone)
-                    current_time = datetime.datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H')
+                    current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H')
                     # 开始时间为上一个小时
                     mt5_start_time = pd.to_datetime(current_time) - timedelta(hours=1)
                     # 结束时间与开始时间相等
@@ -191,7 +191,7 @@ def update_realtime_data(interval):
                     # 数据入库
                     batch_save_by_symbol(symbol_name, dxy_rates)
             result_list.append(data_dict)
-    # print(datetime.datetime.now(), result_list)
+    # print(datetime.now(), result_list)
     logger.info("%s", result_list)
     return result_list
 
