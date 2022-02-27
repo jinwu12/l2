@@ -90,7 +90,7 @@ class Dxy(BaseSymbolPrice):
 class DxyMt5(BaseSymbolPrice):
     @classmethod
     def getSymbol(cls):
-        return "DXY"
+        return "DXY_MT5"
 
 
 class EurUsd(BaseSymbolPrice):
