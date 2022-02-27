@@ -70,6 +70,9 @@ class BaseSymbolPrice(Model):
     class Meta:
         database = data_source_db
         legacy_table_names = False
+        indexes = (
+            (("symbol", "ts", "interval"), True),
+        )
 
 
 class XauUsd(BaseSymbolPrice):
@@ -138,11 +141,11 @@ def batch_save_by_model(symbol_model, dict_data_list, batch_size=500):
     while len(dict_data_list) > batch_size:
         batch = dict_data_list[:batch_size]
         with data_source_db.atomic():
-            getattr(symbol_model, "insert_many")(batch).execute()
+            getattr(symbol_model, "replace_many")(batch).execute()
         dict_data_list = dict_data_list[batch_size:]
     else:
         with data_source_db.atomic():
-            getattr(symbol_model, "insert_many")(dict_data_list).execute()
+            getattr(symbol_model, "replace_many")(dict_data_list).execute()
 
 
 # 通用批量保存，保存对象以字典列表形式传入
@@ -159,7 +162,7 @@ def batch_save_by_symbol(symbol, dict_data_list, batch_size=500):
 
 # 通用单个保存，保存对象以字典形式传入
 def save_by_model(symbol_model, dict_data):
-    getattr(symbol_model, "create")(**dict_data)
+    getattr(symbol_model, "replace")(**dict_data)
 
 
 # 通用单个保存，保存对象以字典形式传入
