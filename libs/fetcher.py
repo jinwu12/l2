@@ -345,4 +345,4 @@ def fetch_data(start, end, interval):
             data_list = get_dxy_from_mt5(start, end, interval)
         logger.info("数据抓取完成：%s[%s ~ %s]@%s => %d", symbol.name, start, end, interval, len(data_list))
         # 数据入库
-        batch_save_by_symbol(symbol.name, data_list)
+        batch_save_by_symbol(symbol.symbol_value, data_list)
