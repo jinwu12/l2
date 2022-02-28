@@ -3,36 +3,37 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import time
 import datetime
 
-# 开始的日期,由于是取的0点，所以需要往前一天以防漏掉周六早上那几个小时的数据
-end = datetime.datetime.now() + datetime.timedelta(days=1)
-# 七天前的日期
-start = (datetime.datetime.now() - datetime.timedelta(days=6))
-# 转换为时间戳
-timeStamp = int(time.mktime(start.timetuple()))
-print(start, end)
 
 # 初始化后台调度器
 scheduler = BackgroundScheduler(timezone='Asia/Shanghai')
 
+
+def weekly_date_reupdate(interval):
+    end = datetime.datetime.now() + datetime.timedelta(days=1)
+    start = (datetime.datetime.now() - datetime.timedelta(days=6))
+    fetcher.fetch_data(start, end, interval)
+    print(start, end)
+
+
 # 添加调度器任务，每周六中午十二点执行数据补录
 # 小时级数据补录
 scheduler.add_job(
-    fetcher.fetch_data,
+    weekly_date_reupdate,
     trigger='cron',
     day_of_week='sat',
     hour='12',
-    args=[start, end, '1h'],
+    args=['1h'],
     max_instances=100,
     misfire_grace_time=60,
     coalesce=True
 )
 # 分钟级数据补录
 scheduler.add_job(
-    fetcher.fetch_data,
+    weekly_date_reupdate,
     trigger='cron',
     day_of_week='sat',
     hour='13',
-    args=[start, end, '1m'],
+    args=['1m'],
     max_instances=100,
     misfire_grace_time=60,
     coalesce=True
