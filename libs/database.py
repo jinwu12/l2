@@ -14,6 +14,22 @@ db_passwords = cfg.get('database', 'passwords')
 ################################################
 config_db = MySQLDatabase('Global_Config', host=db_host, user=db_user, passwd=db_passwords, port=3306)
 
+# combination基础数据
+class Combination(Model):
+    id = AutoField(column_name='id', primary_key=True)
+    #组合名称，默认为空。当为空时通过symbol list中的symbol组合来生成
+    name = CharField(unique=True, column_name='combination_name', max_length=256)
+    #组合价格的symbol列表，半角逗号分隔
+    symbol_list = CharField(column_name='symbol_list', max_length=128)
+    #组合价格匹配方式，strict_match或者best_effort_match
+    combined_method = CharField(column_name='combined_method', max_length=64)
+    #组合价格3点取值，默认为0（即为symbol数量*3）
+    combination_3point_price = SmallIntegerField(column_name='combination_3point_price')
+    #备注字段
+    comments = TextField(column_name='comments')
+    #该组合用于交易的品类，允许多个，用半角逗号分隔
+    trading_symbol = CharField(column_name='trading_symbol', max_length=256)
+
 
 # 使用的各平台账号信息
 class AccountInfo(Model):
