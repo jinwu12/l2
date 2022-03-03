@@ -30,6 +30,11 @@ class Combination(Model):
     #该组合用于交易的品类，允许多个，用半角逗号分隔
     trading_symbol = CharField(column_name='trading_symbol', max_length=256)
 
+    #组合配置依然存放在config_db中
+    class Meta:
+        database = config_db
+        table_name = "symbol_combinations"
+
 
 # 使用的各平台账号信息
 class AccountInfo(Model):
@@ -150,6 +155,9 @@ class UsdSek(BaseSymbolPrice):
     def getSymbol(cls):
         return "USDSEK"
 
+###############################################
+#组合价格数据存放在production_combined_data库中，以组合名称+ID分表
+production_combined_data_db = MySQLDatabase('production_combined_data', host=db_host, user=db_user, passwd=db_passwords, port=3306)
 
 ###############################################
 # 通用批量保存，保存对象以字典列表形式传入
