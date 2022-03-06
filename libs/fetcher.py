@@ -116,7 +116,7 @@ def update_realtime_data(interval):
                 # 附加到data_dict中
                 data_dict['value'] = yf_rates
                 # 数据入库
-                batch_save_by_symbol(symbol_name, yf_rates)
+                batch_save_by_symbol(symbol_value, yf_rates)
                 result_list.append(data_dict)
 
         # 拉取mt5数据的symbol数据
