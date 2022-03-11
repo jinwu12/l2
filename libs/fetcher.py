@@ -98,7 +98,7 @@ def update_realtime_data(interval):
         mt5_rates = []
         dxy_rates = []
         # 用于保存每种计算方式的字典
-        data_dict = dict(symbol=symbol_name, interval=interval, timezone=timezone, method=method)
+        data_dict = dict(symbol=symbol_value, interval=interval, timezone=timezone, method=method)
         # 拉取yfinance数据源的symbol数据
         if method == 'get_historical_data_from_yfinance':
             # 生成时间间隔，必需按照时区转换时间后，按照隔日进行拉取
@@ -116,7 +116,7 @@ def update_realtime_data(interval):
                 # 附加到data_dict中
                 data_dict['value'] = yf_rates
                 # 数据入库
-                batch_save_by_symbol(symbol_name, yf_rates)
+                batch_save_by_symbol(symbol_value, yf_rates)
                 result_list.append(data_dict)
 
         # 拉取mt5数据的symbol数据
@@ -136,7 +136,7 @@ def update_realtime_data(interval):
                     # 附加到data_dict中
                     data_dict['value'] = mt5_rates
                     # 数据入库
-                    batch_save_by_symbol(symbol_name, mt5_rates)
+                    batch_save_by_symbol(symbol_value, mt5_rates)
                 except IndexError:
                     logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
             # 小时级的逻辑
@@ -155,7 +155,7 @@ def update_realtime_data(interval):
                     # 附加到data_dict中
                     data_dict['value'] = mt5_rates
                     # 数据入库
-                    batch_save_by_symbol(symbol_name, mt5_rates)
+                    batch_save_by_symbol(symbol_value, mt5_rates)
                 except IndexError:
                     logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_start_time))
             result_list.append(data_dict)
@@ -189,7 +189,7 @@ def update_realtime_data(interval):
                     # 附加到data_dict中
                     data_dict['value'] = dxy_rates
                     # 数据入库
-                    batch_save_by_symbol(symbol_name, dxy_rates)
+                    batch_save_by_symbol(symbol_value, dxy_rates)
             result_list.append(data_dict)
     # print(datetime.now(), result_list)
     logger.info("%s", result_list)
