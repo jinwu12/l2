@@ -34,37 +34,38 @@ class TestFunctions(unittest.TestCase):
 
     def test_get_lastest_price_before_dst_ts(self):
         test_db = commons.db_connect()
-        dst_ts = 1640880000
-        result = commons.get_lastest_price_before_dst_ts(test_db, "1h", "DXY", dst_ts)
+        dst_ts = 1641160800
+        result = gen_combinations_price.get_lastest_price_before_dst_ts(test_db, "1h", "DX-Y.NYB", dst_ts)
         self.assertEqual("DX-Y.NYB", result[0])
         self.assertEqual(dst_ts, result[1])
-        self.assertEqual(96.002, result[2])
-        self.assertEqual(96.078, result[3])
-        self.assertEqual(95.993, result[4])
-        self.assertEqual(96.069, result[5])
+        self.assertEqual(95.67, result[2])
+        self.assertEqual(95.67, result[3])
+        self.assertEqual(95.67, result[4])
+        self.assertEqual(95.67, result[5])
 
-        result = commons.get_lastest_price_before_dst_ts(test_db, "1h", "DXY", 0)
+        result = gen_combinations_price.get_lastest_price_before_dst_ts(test_db, "1h", "DX-Y.NYB", 0)
         self.assertTrue(result is None)
-
 
     def test_get_historical_symbol_rates_list(self):
         test_db = commons.db_connect()
-        data = gen_combinations_price.get_historical_symbol_rates_list(test_db, '2021-12-04', '2022-01-15', '1h')
+        start = datetime.datetime.strptime('2021-12-04', '%Y-%m-%d')
+        end = datetime.datetime.strptime('2022-01-15', '%Y-%m-%d')
+        data = gen_combinations_price.get_historical_symbol_rates_list(start, end, '1h')
         self.assertTrue(len(data) > 0)
         for item in data:
             ts = -1
-            for sub_item in item:   # 同list中的数据ts应该一致
+            for sub_item in item:  # 同list中的数据ts应该一致
                 cur_ts = sub_item.get('value')[1]
                 if ts < 0:
                     ts = cur_ts
                 else:
                     self.assertEqual(ts, cur_ts)
 
-
     def test_cal_comb_price_strict_match(self):
         test_db = commons.db_connect()
-        data = gen_combinations_price.get_historical_symbol_rates_list(test_db, '2022-02-12 03:00:00',
-                                                                       '2022-02-12 04:59:59', '1h')
+        start = datetime.datetime.strptime('2022-02-12 03:00:00', '%Y-%m-%d %H:%M:%S')
+        end = datetime.datetime.strptime('2022-02-12 04:59:59', '%Y-%m-%d %H:%M:%S')
+        data = gen_combinations_price.get_historical_symbol_rates_list(start, end, '1h')
         result = gen_combinations_price.cal_comb_price_strict_match(data, 1, test_db)
         print(result)
 

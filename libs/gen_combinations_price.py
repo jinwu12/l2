@@ -6,6 +6,7 @@ import pytz
 from dateutil.relativedelta import relativedelta
 
 from libs import commons
+from libs.database import *
 
 from collections import defaultdict, Counter
 
@@ -128,65 +129,49 @@ def get_symbol_name_by_id(symbol_id, symbol_method_list):
     return result
 
 
-# 生成combination的历史数据
-def get_historical_symbol_rates_list(db, start, end, interval):
-    if start.find(" ") != -1:
-        start_date = datetime.datetime.strptime(start, "%Y-%m-%d %H:%M:%S")
-    else:
-        start_date = datetime.datetime.strptime(start, "%Y-%m-%d")
-    if end.find(" ") != -1:
-        end_date = datetime.datetime.strptime(end, "%Y-%m-%d %H:%M:%S")
-    else:
-        end_date = datetime.datetime.strptime(end, "%Y-%m-%d")
-    # print(start_date, end_date)
+# 生成combination的历史数据（https://trello.com/c/ISevINO7）
+def get_historical_symbol_rates_list(start, end, interval):
+    # print(start, end)
     # 各symbol的数据，后续重组返回结果需要
     data = {}
-    symbol_list = commons.get_all_symbol_attr(db)
+    symbol_list = Symbol.select()
     for symbol in symbol_list:
         # print(symbol)
-        the_date = start_date
-        # 循环
-        while the_date.timestamp() <= end_date.timestamp():
-            try:
-                tbl = str.format("{}_{}_original_data_{}", symbol['symbol_name'], interval,
-                                 datetime.datetime.utcfromtimestamp(the_date.timestamp()).strftime("%Y%m"))
-                # print(tbl)
-                sql = "select '%s', ts, price_open, price_high, price_low, price_closed from original_data_source.%s " \
-                      "where ts between %d and %d order by ts" % (
-                          symbol['symbol_value'], tbl, the_date.timestamp(), end_date.timestamp())
-                # print(the_date, sql)
-                cursor = db.cursor()
-                cursor.execute(sql)
-                result = cursor.fetchall()
-                # print(result)
-                exist = data.get(symbol['symbol_name'])
-                if exist is None:
-                    exist = result
-                    data[symbol['symbol_name']] = exist
-                exist = exist + result
-            except:
-                logger.error(traceback.format_exc())
-
-            the_date = the_date + relativedelta(months=1)
-            the_date = the_date.replace(day=end_date.day)
+        try:
+            tbl = get_model_table_by_symbol(symbol.symbol_value)
+            # print(tbl)
+            sql = "select '%s', ts, price_open, price_high, price_low, price_closed from original_data_source.%s " \
+                  "where ts between %d and %d order by ts" % (
+                      symbol.symbol_value, tbl, start.timestamp(), end.timestamp())
+            # print(the_date, sql)
+            cursor = data_source_db.execute_sql(sql)
+            result = list(cursor.fetchall())
+            # print(result)
+            exist = data.get(symbol.name)
+            if exist is None:
+                exist = result
+                data[symbol.name] = exist
+            exist = exist + result
+        except:
+            logger.error(traceback.format_exc())
 
     # 组织返回结果
     # print(data)
     result = []
-    the_date = start_date
-    while the_date.timestamp() <= end_date.timestamp():
+    the_date = start
+    while the_date.timestamp() <= end.timestamp():
         data_in_same_ts = []
         ts = the_date.timestamp()
         for symbol in symbol_list:
             # print(symbol)
-            data_list = data.get(symbol['symbol_name'])
+            data_list = data.get(symbol.name)
             if data_list is not None and len(data_list) > 0 and data_list[0][1] == ts:
                 # {'interval': '1m', 'symbol': 'XAUUSD', 'timezone': 'EET',
                 # 'method': 'get_historical_data_from_mt5',
                 # 'value': [('XAUUSD', 1640102220, 1796.79, 1797.32, 1796.69, 1797.15)]}
                 value = data_list[0]
-                item = {'interval': interval, 'symbol': symbol['symbol_name'], 'timezone': symbol['timezone'],
-                        'method': symbol['method_name'], 'value': value}
+                item = {'interval': interval, 'symbol': symbol.name, 'timezone': symbol.timezone,
+                        'method': symbol.method, 'value': value}
                 data_in_same_ts.append(item)
                 del data_list[0]
         if len(data_in_same_ts) > 0:
@@ -242,7 +227,8 @@ def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
                     open_price_map[symbol[0]] = Decimal.from_float(item['value'][2]) / _3_point_price_map[symbol[0]] * 3
                     high_price_map[symbol[0]] = Decimal.from_float(item['value'][3]) / _3_point_price_map[symbol[0]] * 3
                     low_price_map[symbol[0]] = Decimal.from_float(item['value'][4]) / _3_point_price_map[symbol[0]] * 3
-                    closed_price_map[symbol[0]] = Decimal.from_float(item['value'][5]) / _3_point_price_map[symbol[0]] * 3
+                    closed_price_map[symbol[0]] = Decimal.from_float(item['value'][5]) / _3_point_price_map[
+                        symbol[0]] * 3
                     if item['interval'] == '1m':
                         interval = 60
                     ts = item['value'][1]
@@ -289,3 +275,14 @@ def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
                               low_combo_price, closed_combo_price]
     }
     return True, data
+
+
+# 从db中拉取特定symbol到指定时间戳之前的最新报价
+def get_lastest_price_before_dst_ts(db, interval, symbol, dst_ts):
+    tbl = get_model_table_by_symbol(symbol)
+    sql = "select symbol_name, ts, price_open, price_high, price_low, price_closed " \
+          "from original_data_source.%s where `interval`='%s' and ts<=%d order by ts desc limit 1" % (tbl, interval, dst_ts)
+    cursor = db.cursor()
+    cursor.execute(sql)
+    result = cursor.fetchone()
+    return result
