@@ -80,6 +80,110 @@ def get_historical_data_from_mt5(symbol, interval, start, end):
     mt5.shutdown()
     return rates_list
 
+#单独封装mt5的实时入库函数
+def update_realtime_data_mt5_only(interval):
+    # 初始化数据库连接
+    symbols = Symbol.select()
+    # 结果列表
+    result_list = []
+    # 获取symbol method对应的method list，并进行遍历
+    for symbol in symbols:
+        symbol_name = symbol.name
+        # 根据symbol name获取拉取数据用的symbol value，用于获取数据
+        symbol_value = symbol.symbol_value
+        method = symbol.method
+        timezone = symbol.timezone
+        yf_rates = []
+        mt5_rates = []
+        dxy_rates = []
+        # 用于保存每种计算方式的字典
+        data_dict = dict(symbol=symbol_value, interval=interval, timezone=timezone, method=method)
+        # 拉取yfinance数据源的symbol数据
+        if method == 'get_historical_data_from_yfinance':
+            # 由于此处仅拉取mt5相关数据，所以yf_rates直接置为空值以保持结果格式的一致
+            yf_rates.append(dict(symbol=symbol_value, interval=interval, ts=0,
+                                 price_open=0.0, price_high=0.0,
+                                 price_low=0.0, price_closed=0.0)
+                    )
+            # 附加到data_dict中
+            data_dict['value'] = yf_rates
+            result_list.append(data_dict)
+
+        # 拉取mt5数据的symbol数据
+        elif method == 'get_historical_data_from_mt5':
+            # 分钟级的逻辑
+            if interval == '1m':
+                # 生成转换为mt5时区后的时间间隔并去掉秒，开始时间为上一分钟
+                mt5_tz = pytz.timezone(timezone)
+                current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M')
+                mt5_start_time = pd.to_datetime(current_time) - timedelta(minutes=1)
+                # 结束时间等于开始时间
+                mt5_end_time = mt5_start_time
+                # 拉取数据
+                try:
+                    mt5_rates.append(
+                        get_historical_data_from_mt5(symbol_value, interval, mt5_start_time, mt5_end_time)[0])
+                    # 附加到data_dict中
+                    data_dict['value'] = mt5_rates
+                    # 数据入库
+                    batch_save_by_symbol(symbol_value, mt5_rates)
+                except IndexError:
+                    logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
+            # 小时级的逻辑
+            if interval == '1h':
+                # 生成转换为mt5时区后的时间间隔并去掉秒和分钟，开始时间为上一小时
+                mt5_tz = pytz.timezone(timezone)
+                current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H')
+                # 开始时间为上一个小时
+                mt5_start_time = pd.to_datetime(current_time) - timedelta(hours=1)
+                # 结束时间等于开始时间
+                mt5_end_time = mt5_start_time
+                # 拉取数据
+                try:
+                    mt5_rates.append(
+                        get_historical_data_from_mt5(symbol_value, interval, mt5_start_time, mt5_end_time)[0])
+                    # 附加到data_dict中
+                    data_dict['value'] = mt5_rates
+                    # 数据入库
+                    batch_save_by_symbol(symbol_value, mt5_rates)
+                except IndexError:
+                    logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_start_time))
+            result_list.append(data_dict)
+        # 从mt5拉取数据去生成的symbol数据,当前只有dxy，如果有需要就继续在此分支下添加if即可
+        if method == 'originate_from_mt5':
+            # 根据mt5等货币对报价，生成DXY
+            if symbol_value == 'DXY_MT5':
+                # 分钟级的逻辑
+                if interval == '1m':
+                    # 生成转换为mt5时区后的时间间隔并去掉秒，开始时间为上一分钟
+                    mt5_tz = pytz.timezone(timezone)
+                    current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M')
+                    mt5_start_time = pd.to_datetime(current_time) - timedelta(minutes=1)
+                    # 结束时间与开始时间相等
+                    mt5_end_time = mt5_start_time
+                # 小时级的逻辑
+                if interval == '1h':
+                    # 生成转换为mt5时区后的时间间隔并去掉秒和分钟，开始时间为上一小时
+                    mt5_tz = pytz.timezone(timezone)
+                    current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H')
+                    # 开始时间为上一个小时
+                    mt5_start_time = pd.to_datetime(current_time) - timedelta(hours=1)
+                    # 结束时间与开始时间相等
+                    mt5_end_time = mt5_start_time
+                # 拉取并计算dxy
+                try:
+                    dxy_rates = get_dxy_from_mt5(mt5_start_time, mt5_end_time, interval)
+                except IndexError:
+                    logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
+                else:
+                    # 附加到data_dict中
+                    data_dict['value'] = dxy_rates
+                    # 数据入库
+                    batch_save_by_symbol(symbol_value, dxy_rates)
+            result_list.append(data_dict)
+    # print(datetime.now(), result_list)
+    logger.info("%s", result_list)
+    return result_list
 
 # 封装入库实时数据schedule函数
 def update_realtime_data(interval):

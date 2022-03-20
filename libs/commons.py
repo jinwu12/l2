@@ -20,7 +20,7 @@ def create_logger(name='app'):
         logger.setLevel(logging.INFO)
         log_map[name] = logger
         # 输出到日志文件
-        handler = logging.FileHandler(name+".txt")
+        handler = logging.FileHandler('logs/'+name+datetime.now().strftime('%Y-%m-%d')+".txt")
         handler.setLevel(logging.INFO)
         handler.setFormatter(logging.Formatter(LOG_FORMAT))
         logger.addHandler(handler)
