@@ -1,6 +1,7 @@
 import datetime
 import traceback
 from decimal import *
+from playhouse.shortcuts import model_to_dict
 
 import pytz
 from dateutil.relativedelta import relativedelta
@@ -46,96 +47,36 @@ def insert_combined_orignal_data(db, combined_price_list):
         db.commit()
 
 
-# 拉取全量组合
+# 检查组合数据是否完备，完善名称和3点价格
 # https://trello.com/c/LCDudDre
-def get_symbol_combinations(db, symbol_methods):
-    # 初始化db指针
-    db_cursor = db.cursor()
-    # 拼接拉取sql并拉取组合数据
-    sql = 'select id,combination_name,symbol_list,combined_method,combination_3point_price,trading_symbol from Global_Config.symbol_combinations'
-    db_cursor.execute(sql)
-    sql_result = db_cursor.fetchall()
-    result_list = []
-    # 遍历结果
-    for i in sql_result:
-        id = int(i[0])
-        combination_name = i[1]
-        symbol_list = str(i[2])
-        combined_method = i[3]
-        tri_point_price = int(i[4])
-        trading_symbol = i[5]
-        # 判断combination_name是否为空，如果为空则根据symbol_list拉取symbol_name，与combined_method组成新的combination_name，然后update数据库中的combination_name
-        if combination_name == '':
-            for symbol_id in symbol_list.split(','):
-                combination_name = combination_name + get_symbol_name_by_id(int(symbol_id), symbol_methods)[0][1] + '-'
-            combination_name = combination_name + combined_method
-            # 更新到db中
-            sql = 'update Global_Config.symbol_combinations set combination_name="' + combination_name + '" where id=' + str(
-                id)
-            print(sql)
-            db_cursor.execute(sql)
-            db.commit()
-        # 如果combination_3point_price为0，则运行calculate_combination_3point_price更新
-        if tri_point_price == 0:
-            tri_point_price = calculate_combination_3point_price(db, id)['tri_point_price']
-        # 拼接结果
-        result = {}
-        result['id'] = id
-        result['combination_name'] = combination_name
-        result['symbol_list'] = symbol_list
-        result['combined_method'] = combined_method
-        result['tri_point_price'] = tri_point_price
-        result['trading_symbol'] = trading_symbol
-        result_list.append(result)
-    return result_list
+# 如果更新了symbol_list中的组合，需要将combination_3point_price设置为0，然后重新运行此函数
+def check_combinations():
+    combinations = Combination.select()
+    for combination in combinations:
+        # combination_name规则：取symbol_list中各symbol_name与combined_method组成新的combination_name
+        if len(combination.name) < 1:
+            combination_name = ''
+            for id in combination.symbol_list.split(','):
+                combination_name += Symbol.get_by_id(int(id)).name + '-'
+            combination_name += combination.combined_method
+            combination.update(name=combination_name).execute()
+        # 重算一次3点价格
+        combination.update(combination_3point_price=calculate_combination_3point_price(combination)).execute()
 
 
 # 计算特定组合的3点价格
-# 如果更新了symbol_list中的组合，需要将combination_3point_price设置为0，然后重新运行此函数
 # https://trello.com/c/yREdUOrk
-def calculate_combination_3point_price(db, combinations_id):
-    # 初始化db指针
-    db_cursor = db.cursor()
-    # 拼接拉取combinations_id对应的symbol_list及3点价格的sql
-    sql = 'select  id,symbol_list,combination_3point_price from Global_Config.symbol_combinations where id=' + str(
-        combinations_id)
-    # 拉取数据并赋值
-    db_cursor.execute(sql)
-    sql_result = db_cursor.fetchall()
-    id = int(sql_result[0][0])
-    symbol_list = sql_result[0][1]
-    tri_point_price = sql_result[0][2]
-    result = {}
-
-    # 当combination_3point_price等于0时，证明该组合未曾生成过3点价格，则计算3点价格并更新到db中
-    if tri_point_price == 0:
-        tri_point_price = int(len(symbol_list.split(',')) * 3)
-        sql = 'update Global_Config.symbol_combinations set combination_3point_price=' + str(
-            tri_point_price) + ' where id=' + str(id)
-        db_cursor.execute(sql)
-        db.commit()
-    # 当combination_3point_price不等于0时，证明该组合已产生过价格，直接返回即可
-    result['id'] = id
-    result['tri_point_price'] = tri_point_price
-    return result
-
-
-# 从Tbl_symbol_method表中拉取method_id对应的symbol name，供get_symbol_combinations中生成组合名称使用
-def get_symbol_name_by_id(symbol_id, symbol_method_list):
-    result = []
-    for item in symbol_method_list:
-        if item.get('method_id') == symbol_id:
-            result.append((symbol_id, item.get('symbol_name')))
-    return result
+def calculate_combination_3point_price(combination):
+    return int(len(combination.symbol_list.split(',')) * 3)
 
 
 # 生成combination的历史数据（https://trello.com/c/ISevINO7）
 def get_historical_symbol_rates_list(start, end, interval):
     # print(start, end)
-    # 各symbol的数据，后续重组返回结果需要
+    # 各symbol的数据，后续重组返回结果需要，<symbol名, >
     data = {}
-    symbol_list = Symbol.select()
-    for symbol in symbol_list:
+    symbols = Symbol.select()
+    for symbol in symbols:
         # print(symbol)
         try:
             tbl = get_model_table_by_symbol(symbol.symbol_value)
@@ -162,7 +103,7 @@ def get_historical_symbol_rates_list(start, end, interval):
     while the_date.timestamp() <= end.timestamp():
         data_in_same_ts = []
         ts = the_date.timestamp()
-        for symbol in symbol_list:
+        for symbol in symbols:
             # print(symbol)
             data_list = data.get(symbol.name)
             if data_list is not None and len(data_list) > 0 and data_list[0][1] == ts:
@@ -186,25 +127,17 @@ def get_historical_symbol_rates_list(start, end, interval):
 
 # 使用strict_match方式来使用传入的symbol_rates_list和combination生成组合价格
 # https://trello.com/c/oI5VMqx8
-def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
-    db_cursor = db.cursor()
-    sql = "select combination_name, symbol_list from Global_Config.symbol_combinations where id = %d" % symbol_combination_id
-    db_cursor.execute(sql)
-    sql_result = db_cursor.fetchone()
-    combination_name = sql_result[0]
-    # print(sql_result[1][0])
-    sql = "select symbol_name, `3point_price` from Global_Config.Tbl_symbol_method where method_id in (%s)" % \
-          sql_result[1]
-    db_cursor.execute(sql)
-    sql_result = db_cursor.fetchall()
-    # print(sql_result)
-    _3_point_price_map = {}  # 3点价格
-    for symbol, price in sql_result:
-        # print(symbol, "->", price)
-        if price is None:
-            logger.error("缺少3点价格数据：symbol=%s", symbol)
+def cal_comb_price_strict_match(symbol_rates_list, combination_id, db):
+    combination = Combination.get_by_id(combination_id)
+    symbols = Symbol.select().where(Symbol.id.in_(combination.symbol_list.split(",")))
+    trio_point_price_map = {}  # 3点价格
+    for symbol in symbols:
+        print(model_to_dict(symbol))
+        if symbol.trio_point_price is None:
+            logger.error("缺少3点价格数据：symbol=%s", symbol.name)
             return False, None
-        _3_point_price_map[symbol] = price
+        trio_point_price_map[symbol] = symbol.trio_point_price
+
     open_price_map = {}
     high_price_map = {}
     low_price_map = {}
@@ -214,21 +147,22 @@ def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
     min_ts = -1  # 最小的时间戳
     max_ts = -1  # 最大的时间戳
     ts_list = []
-    for symbol in sql_result:
-        # print("check=>", symbol[0])
+    for symbol in symbols:
+        # print("check=>", symbol.name)
+        symbol_name = symbol.name
         # 同symbol的，取最前的一条报价
         find = False
         for sub_list in symbol_rates_list:
             for item in sub_list:
-                if item['symbol'] == symbol[0]:
+                if item['symbol'] == symbol_name:
                     # print(item)
                     find = True
                     # 计算 价格/3点价*3
-                    open_price_map[symbol[0]] = Decimal.from_float(item['value'][2]) / _3_point_price_map[symbol[0]] * 3
-                    high_price_map[symbol[0]] = Decimal.from_float(item['value'][3]) / _3_point_price_map[symbol[0]] * 3
-                    low_price_map[symbol[0]] = Decimal.from_float(item['value'][4]) / _3_point_price_map[symbol[0]] * 3
-                    closed_price_map[symbol[0]] = Decimal.from_float(item['value'][5]) / _3_point_price_map[
-                        symbol[0]] * 3
+                    open_price_map[symbol_name] = Decimal.from_float(item['value'][2]) / trio_point_price_map[symbol_name] * 3
+                    high_price_map[symbol_name] = Decimal.from_float(item['value'][3]) / trio_point_price_map[symbol_name] * 3
+                    low_price_map[symbol_name] = Decimal.from_float(item['value'][4]) / trio_point_price_map[symbol_name] * 3
+                    closed_price_map[symbol_name] = Decimal.from_float(item['value'][5]) / trio_point_price_map[
+                        symbol_name] * 3
                     if item['interval'] == '1m':
                         interval = 60
                     ts = item['value'][1]
@@ -242,7 +176,7 @@ def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
                 # print("----------")
                 break
         if not find:
-            logger.error("symbol报价缺失：%s", symbol[0])
+            logger.error("symbol报价缺失：%s", symbol_name)
             return False, None
     # 比较各symbol报价的时差
     diff = max_ts - min_ts
@@ -267,11 +201,11 @@ def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
     most_common_ts = ts_counter.most_common(1)[0][0]
     # print(ts_list, ts_counter.most_common(1), ts_counter.most_common(1)[0][0])
     data = {
-        'combination_id': symbol_combination_id, 'combined_method': 'strict_match',
-        'symbol_3point_price': _3_point_price_map,
-        'combination_3point_price': calculate_combination_3point_price(db, symbol_combination_id),
+        'combination_id': combination_id, 'combined_method': 'strict_match',
+        'symbol_3point_price': trio_point_price_map,
+        'combination_3point_price': calculate_combination_3point_price(db, combination_id),
         'interval': '1m' if interval == 60 else '1h',
-        'combination_price': [combination_name, most_common_ts, open_combo_price, high_combo_price,
+        'combination_price': [combination.name, most_common_ts, open_combo_price, high_combo_price,
                               low_combo_price, closed_combo_price]
     }
     return True, data
@@ -281,7 +215,8 @@ def cal_comb_price_strict_match(symbol_rates_list, symbol_combination_id, db):
 def get_lastest_price_before_dst_ts(db, interval, symbol, dst_ts):
     tbl = get_model_table_by_symbol(symbol)
     sql = "select symbol_name, ts, price_open, price_high, price_low, price_closed " \
-          "from original_data_source.%s where `interval`='%s' and ts<=%d order by ts desc limit 1" % (tbl, interval, dst_ts)
+          "from original_data_source.%s where `interval`='%s' and ts<=%d order by ts desc limit 1" % (
+              tbl, interval, dst_ts)
     cursor = db.cursor()
     cursor.execute(sql)
     result = cursor.fetchone()

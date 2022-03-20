@@ -62,7 +62,7 @@ class Symbol(Model):
     symbol_value = CharField(max_length=16)
     contract_size = CharField(max_length=32)
     digits = SmallIntegerField()
-    _3point_price = DecimalField(column_name="3point_price", max_digits=10)
+    trio_point_price = DecimalField(column_name="3point_price", max_digits=10)
 
     class Meta:
         database = config_db

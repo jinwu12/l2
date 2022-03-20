@@ -36,7 +36,7 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEqual("XAUUSD", symbol.symbol_value)
         self.assertIsNone(symbol.contract_size)
         self.assertIsNone(symbol.digits)
-        self.assertEqual(3.000000, symbol._3point_price)
+        self.assertEqual(3.000000, symbol.trio_point_price)
 
     def test_xauusd(self):
         item = XauUsd(symbol='XAUUSD', ts=1640970000, interval='1h',

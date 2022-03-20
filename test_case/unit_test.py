@@ -3,34 +3,11 @@ import sys
 
 sys.path.append("..")
 from libs import commons, gen_combinations_price
+from libs.database import *
 import unittest
 
 
 class TestFunctions(unittest.TestCase):
-
-    def test_get_symbol_name_by_id(self):
-        result = gen_combinations_price.get_symbol_name_by_id(1, [])
-        self.assertEqual(0, len(result))
-
-        data_list = [
-            {'method_id': 1, 'symbol_name': 'XAUUSD', 'method_name': 'get_historical_data_from_mt5', 'timezone': 'EET',
-             'symbol_value': 'XAUUSD', 'contract_size': None, 'digits': None, '3point_price': None},
-            {'method_id': 2, 'symbol_name': 'TNX', 'method_name': 'get_historical_data_from_yfinance',
-             'timezone': 'US/Eastern',
-             'symbol_value': '^TNX', 'contract_size': None, 'digits': None, '3point_price': None},
-            {'method_id': 3, 'symbol_name': 'DXY', 'method_name': 'get_historical_data_from_yfinance',
-             'timezone': 'US/Eastern',
-             'symbol_value': 'DX-Y.NYB', 'contract_size': None, 'digits': None, '3point_price': None},
-            {'method_id': 4, 'symbol_name': 'EURUSD', 'method_name': 'get_historical_data_from_mt5', 'timezone': 'EET',
-             'symbol_value': 'EURUSD', 'contract_size': None, 'digits': None, '3point_price': None}
-        ]
-        result = gen_combinations_price.get_symbol_name_by_id(1, data_list)
-        self.assertEqual(1, len(result))
-        self.assertEqual(1, result[0][0])
-        self.assertEqual("XAUUSD", result[0][1])
-
-        result = gen_combinations_price.get_symbol_name_by_id(-1, data_list)
-        self.assertEqual(0, len(result))
 
     def test_get_lastest_price_before_dst_ts(self):
         test_db = commons.db_connect()
@@ -47,10 +24,10 @@ class TestFunctions(unittest.TestCase):
         self.assertTrue(result is None)
 
     def test_get_historical_symbol_rates_list(self):
-        test_db = commons.db_connect()
         start = datetime.datetime.strptime('2021-12-04', '%Y-%m-%d')
         end = datetime.datetime.strptime('2022-01-15', '%Y-%m-%d')
         data = gen_combinations_price.get_historical_symbol_rates_list(start, end, '1h')
+        print(data)
         self.assertTrue(len(data) > 0)
         for item in data:
             ts = -1
@@ -61,6 +38,12 @@ class TestFunctions(unittest.TestCase):
                 else:
                     self.assertEqual(ts, cur_ts)
 
+    def test_calculate_combination_3point_price(self):
+        combination = Combination(id=1, symbol_list="1,10", combination_3point_price=6)
+        self.assertEqual(6, gen_combinations_price.calculate_combination_3point_price(combination))
+        combination = Combination(id=1, symbol_list="1,10")
+        self.assertEqual(6, gen_combinations_price.calculate_combination_3point_price(combination))
+
     def test_cal_comb_price_strict_match(self):
         test_db = commons.db_connect()
         start = datetime.datetime.strptime('2022-02-12 03:00:00', '%Y-%m-%d %H:%M:%S')
@@ -68,6 +51,10 @@ class TestFunctions(unittest.TestCase):
         data = gen_combinations_price.get_historical_symbol_rates_list(start, end, '1h')
         result = gen_combinations_price.cal_comb_price_strict_match(data, 1, test_db)
         print(result)
+
+
+    def test_check_combinations(self):
+        gen_combinations_price.check_combinations()
 
 
 if __name__ == '__main__':
