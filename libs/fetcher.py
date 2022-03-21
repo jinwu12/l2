@@ -82,7 +82,7 @@ def get_historical_data_from_mt5(symbol, interval, start, end):
 
 
 # 封装入库实时数据schedule函数
-def update_realtime_data(interval, skip_symbol = None):
+def update_realtime_data(interval, skip_symbol = []):
     # 初始化数据库连接
     symbols = Symbol.select()
     # 结果列表
