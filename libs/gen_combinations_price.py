@@ -127,7 +127,7 @@ def get_historical_symbol_rates_list(start, end, interval):
 
 # 使用strict_match方式来使用传入的symbol_rates_list和combination生成组合价格
 # https://trello.com/c/oI5VMqx8
-def cal_comb_price_strict_match(symbol_rates_list, combination_id, db):
+def cal_comb_price_strict_match(symbol_rates_list, combination_id):
     combination = Combination.get_by_id(combination_id)
     symbols = Symbol.select().where(Symbol.id.in_(combination.symbol_list.split(",")))
     trio_point_price_map = {}  # 3点价格
@@ -202,7 +202,7 @@ def cal_comb_price_strict_match(symbol_rates_list, combination_id, db):
     data = {
         'combination_id': combination_id, 'combined_method': 'strict_match',
         'symbol_3point_price': trio_point_price_map,
-        'combination_3point_price': calculate_combination_3point_price(db, combination_id),
+        'combination_3point_price': calculate_combination_3point_price(combination),
         'interval': '1m' if interval == 60 else '1h',
         'combination_price': [combination.name, most_common_ts, open_combo_price, high_combo_price,
                               low_combo_price, closed_combo_price]
