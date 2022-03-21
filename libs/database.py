@@ -14,23 +14,24 @@ db_passwords = cfg.get('database', 'passwords')
 ################################################
 config_db = MySQLDatabase('Global_Config', host=db_host, user=db_user, passwd=db_passwords, port=3306)
 
+
 # combination基础数据
 class Combination(Model):
     id = AutoField(column_name='id', primary_key=True)
-    #组合名称，默认为空。当为空时通过symbol list中的symbol组合来生成
+    # 组合名称，默认为空。当为空时通过symbol list中的symbol组合来生成
     name = CharField(unique=True, column_name='combination_name', max_length=256)
-    #组合价格的symbol列表，半角逗号分隔
+    # 组合价格的symbol列表，半角逗号分隔
     symbol_list = CharField(column_name='symbol_list', max_length=128)
-    #组合价格匹配方式，strict_match或者best_effort_match
+    # 组合价格匹配方式，strict_match或者best_effort_match
     combined_method = CharField(column_name='combined_method', max_length=64)
-    #组合价格3点取值，默认为0（即为symbol数量*3）
+    # 组合价格3点取值，默认为0（即为symbol数量*3）
     combination_3point_price = SmallIntegerField(column_name='combination_3point_price')
-    #备注字段
+    # 备注字段
     comments = TextField(column_name='comments')
-    #该组合用于交易的品类，允许多个，用半角逗号分隔
+    # 该组合用于交易的品类，允许多个，用半角逗号分隔
     trading_symbol = CharField(column_name='trading_symbol', max_length=256)
 
-    #组合配置依然存放在config_db中
+    # 组合配置依然存放在config_db中
     class Meta:
         database = config_db
         table_name = "symbol_combinations"
@@ -61,7 +62,7 @@ class Symbol(Model):
     symbol_value = CharField(max_length=16)
     contract_size = CharField(max_length=32)
     digits = SmallIntegerField()
-    _3point_price = DecimalField(column_name="3point_price", max_digits=10)
+    trio_point_price = DecimalField(column_name="3point_price", max_digits=10)
 
     class Meta:
         database = config_db
@@ -155,9 +156,12 @@ class UsdSek(BaseSymbolPrice):
     def getSymbol(cls):
         return "USDSEK"
 
+
 ###############################################
-#组合价格数据存放在production_combined_data库中，以组合名称+ID分表
-production_combined_data_db = MySQLDatabase('production_combined_data', host=db_host, user=db_user, passwd=db_passwords, port=3306)
+# 组合价格数据存放在production_combined_data库中
+production_combined_data_db = MySQLDatabase('production_combined_data', host=db_host, user=db_user, passwd=db_passwords,
+                                            port=3306)
+
 
 ###############################################
 # 通用批量保存，保存对象以字典列表形式传入
@@ -182,6 +186,20 @@ def batch_save_by_symbol(symbol, dict_data_list, batch_size=500):
             break
     if not valid:
         raise Exception("symbol没有对应的Model:" + symbol)
+
+
+# 根据symbol获取对应模型
+def get_model_by_symbol(symbol):
+    for sc in BaseSymbolPrice.__subclasses__():
+        if symbol == getattr(sc, "getSymbol")():
+            return sc
+
+
+# 根据symbol获取对应的模型表名
+def get_model_table_by_symbol(symbol):
+    for sc in BaseSymbolPrice.__subclasses__():
+        if symbol == getattr(sc, "getSymbol")():
+            return sc._meta.table_name
 
 
 # 通用单个保存，保存对象以字典形式传入

@@ -36,7 +36,7 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEqual("XAUUSD", symbol.symbol_value)
         self.assertIsNone(symbol.contract_size)
         self.assertIsNone(symbol.digits)
-        self.assertEqual(3.000000, symbol._3point_price)
+        self.assertEqual(3.000000, symbol.trio_point_price)
 
     def test_xauusd(self):
         item = XauUsd(symbol='XAUUSD', ts=1640970000, interval='1h',
@@ -64,6 +64,15 @@ class DatabaseTestCase(unittest.TestCase):
         count = XauUsd.select().count()
         save_by_symbol(item)
         self.assertEqual(1 + count, XauUsd.select().count())
+
+    def test_custom_query(self):
+        cursor = data_source_db.execute_sql('select * from xau_usd where ts>%s', 10000)
+        print(len(cursor.fetchall()))
+        # for item in cursor:
+        #     print("-->", item[0], item)
+        symbol = "USDCAD"
+        model = get_model_by_symbol(symbol)
+        self.assertEqual(model._meta.table_name, get_model_table_by_symbol(symbol))
 
 
 if __name__ == '__main__':

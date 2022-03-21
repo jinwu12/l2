@@ -68,14 +68,4 @@ def db_connect():
     return mydb
 
 
-# 从db中拉取特定symbol到指定时间戳之前的最新报价
-def get_lastest_price_before_dst_ts(db, interval, symbol, dst_ts):
-    year_month_suffix = datetime.utcfromtimestamp(datetime.utcnow().timestamp()).strftime("%Y%m")
-    tbl = str.format("{}_{}_original_data_{}", symbol, interval, year_month_suffix)
-    sql = "select symbol_name, ts, price_open, price_high, price_low, price_closed from original_data_source.%s where ts<=%d order by ts desc limit 1" % (tbl, dst_ts)
-    cursor = db.cursor()
-    cursor.execute(sql)
-    result = cursor.fetchone()
-    return result
-
 
