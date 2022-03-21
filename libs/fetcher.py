@@ -107,7 +107,7 @@ def update_realtime_data(interval, skip_symbol = []):
             # 生成时间间隔，必需按照时区转换时间后，按照隔日进行拉取
             #实时数据拉取的start和end必须只传到日为止，比如2022-03-21，不能在后面带时分秒，否则会报错
             yf_tz = pytz.timezone(timezone)
-            yf_start_time = yf_tz.localize(datetime.now()).date()
+            yf_start_time = datetime.now(tz=yf_tz).date()
             yf_end_time = yf_start_time + timedelta(days=1)
             # yfinance的分钟级及小时级数据拉取逻辑一致
             # 拉取数据，并截取最后一个元素作为结果
