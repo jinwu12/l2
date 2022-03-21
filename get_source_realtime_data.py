@@ -5,27 +5,30 @@ import time
 # 初始化后台调度器
 scheduler = BackgroundScheduler(timezone='UTC')
 
-# 每周周日23时0分0秒到周一13时0分0秒,只更新mt5相关数据
+#待跳过拉取的symbol name 
+skip_symbols = ['TNX']
+
+# 每周周日23时0分0秒到周一13时0分0秒,只更新非TNX以外的数据
 #周日
 # 分钟级数据
 scheduler.add_job(
-    fetcher.update_realtime_data_mt5_only,
+    fetcher.update_realtime_data,
     trigger='cron',
     day_of_week='sun',
     hour='23',
     minute='0-59',
-    args=['1m'],
+    args=['1m', skip_symbols],
     max_instances=100,
     misfire_grace_time=60,
     coalesce=True
 )
 # 小时级数据
 scheduler.add_job(
-    fetcher.update_realtime_data_mt5_only,
+    fetcher.update_realtime_data,
     trigger='cron',
     day_of_week='sun',
     hour='23',
-    args=['1h'],
+    args=['1h', skip_symbols],
     max_instances=100,
     misfire_grace_time=60,
     coalesce=True
@@ -34,23 +37,23 @@ scheduler.add_job(
 #周一
 # 分钟级数据
 scheduler.add_job(
-    fetcher.update_realtime_data_mt5_only,
+    fetcher.update_realtime_data,
     trigger='cron',
     day_of_week='mon',
     hour='0-13',
     minute='0-59',
-    args=['1m'],
+    args=['1m', skip_symbols],
     max_instances=100,
     misfire_grace_time=60,
     coalesce=True
 )
 #小时级数据
 scheduler.add_job(
-    fetcher.update_realtime_data_mt5_only,
+    fetcher.update_realtime_data,
     trigger='cron',
     day_of_week='mon',
     hour='0-13',
-    args=['1h'],
+    args=['1h', skip_symbols],
     max_instances=100,
     misfire_grace_time=60,
     coalesce=True
@@ -113,23 +116,23 @@ scheduler.add_job(
 # 周六0点-周六3点,只更新mt5的数据
 # 分钟级数据
 scheduler.add_job(
-    fetcher.update_realtime_data_mt5_only,
+    fetcher.update_realtime_data,
     trigger='cron',
     day_of_week='sat',
     hour='0-3',
     minute='0-59',
-    args=['1m'],
+    args=['1m', skip_symbols],
     max_instances=100,
     misfire_grace_time=60,
     coalesce=True
 )
 # 小时级数据
 scheduler.add_job(
-    fetcher.update_realtime_data_mt5_only,
+    fetcher.update_realtime_data,
     trigger='cron',
     day_of_week='sat',
     hour='0-3',
-    args=['1h'],
+    args=['1h', skip_symbols],
     max_instances=100,
     misfire_grace_time=60,
     coalesce=True
