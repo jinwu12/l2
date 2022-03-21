@@ -158,7 +158,7 @@ class UsdSek(BaseSymbolPrice):
 
 
 ###############################################
-# 组合价格数据存放在production_combined_data库中，以组合名称+ID分表
+# 组合价格数据存放在production_combined_data库中
 production_combined_data_db = MySQLDatabase('production_combined_data', host=db_host, user=db_user, passwd=db_passwords,
                                             port=3306)
 

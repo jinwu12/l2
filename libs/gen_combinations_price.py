@@ -161,8 +161,7 @@ def cal_comb_price_strict_match(symbol_rates_list, combination_id, db):
                     open_price_map[symbol_name] = Decimal.from_float(item['value'][2]) / trio_point_price_map[symbol_name] * 3
                     high_price_map[symbol_name] = Decimal.from_float(item['value'][3]) / trio_point_price_map[symbol_name] * 3
                     low_price_map[symbol_name] = Decimal.from_float(item['value'][4]) / trio_point_price_map[symbol_name] * 3
-                    closed_price_map[symbol_name] = Decimal.from_float(item['value'][5]) / trio_point_price_map[
-                        symbol_name] * 3
+                    closed_price_map[symbol_name] = Decimal.from_float(item['value'][5]) / trio_point_price_map[symbol_name] * 3
                     if item['interval'] == '1m':
                         interval = 60
                     ts = item['value'][1]
