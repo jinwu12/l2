@@ -14,6 +14,31 @@ db_passwords = cfg.get('database', 'passwords')
 ################################################
 config_db = MySQLDatabase('Global_Config', host=db_host, user=db_user, passwd=db_passwords, port=3306)
 
+#PivotReport基础对象
+class PivotReport(Model):
+    #自增ID
+    id = AutoField(column_name='id', primary_key=True)
+    #行情记录表的初始记录栏目，默认值为4
+    initial_column = SmallIntegerField(column_name='initial_column', default=4)
+    #行情记录表对应的combination id
+    combination_id = BigIntegerField(column_name='combination_id', null=False)
+    #行情记录表对应的combination下的symbol对应时区的名称
+    timezone = CharField(column_name='timezone', max_length=16, null=False)
+    #组合方法，行情记录表对应的combination下的combined_method
+    combined_method = CharField(column_name='combined_method',  max_length=16, null=False)
+    #开始记录时间，默认值应为combination最早有记录的时间, 以utc0时区的时间戳存储
+    start_date = BigIntegerField(column_name='start_date', null=False)
+    #备注
+    comments = TextField(collumn_name='comments')
+
+    # 存放在config_db中
+    class Meta:
+        database = config_db
+        table_name = "pivot_reports"
+        indexes = (
+            (("initial_column", "combination_id", "timezone", "start_date"), True),
+        )
+
 
 # combination基础数据
 class Combination(Model):
@@ -67,6 +92,41 @@ class Symbol(Model):
     class Meta:
         database = config_db
         table_name = "Tbl_symbol_method"
+
+
+###############################################
+# 行情记录表数据存放在production_pivot_report库中
+production_pivot_report_db = MySQLDatabase('production_pivot_report', host=db_host, user=db_user, passwd=db_passwords, port=3306)
+
+# 行情记录表的每日记录类
+class PivotReportRecord(Model):
+    #自增ID
+    id = AutoField(column_name="id", primary_key=True)
+    #行情记录属于哪一个行情记录表
+    pivot_report = BigIntegerField(column_name='pivot_report_id', null=False)
+    #行情记录的日期，以行情记录表的时区所对应的当日0点0分0秒的时间戳来记录,作为该记录的日期
+    date = BigIntegerField(column_name='date', null=False)
+    #行情记录的价格，取date所在当天的23时收盘价作为当天的收盘价记录
+    price = DoubleField(column_name='price', null=False)
+    #该记录是否需要在当天的结果报表中记录
+    is_recorded = BooleanField(null=False)
+    #该记录处于结果报表中的哪一栏,取值范围如下：
+    '''
+    - 次级回升栏:1
+    - 自然回升栏:2
+    - 上升趋势栏:3
+    - 下降趋势栏:4
+    - 自然回撤栏:5
+    - 次级回撤栏:6
+    '''
+    recorded_column = SmallIntegerField(column_name='recorded_column', null=False)
+    #该记录点是否属于关键点
+    is_pivot = BooleanField(null=False)
+
+    #数据存放在production_pivot_report中
+    class Meta:
+        database = production_pivot_report_db
+        table_name = 'pivot_report_price'
 
 
 ###############################################
@@ -159,8 +219,7 @@ class UsdSek(BaseSymbolPrice):
 
 ###############################################
 # 组合价格数据存放在production_combined_data库中
-production_combined_data_db = MySQLDatabase('production_combined_data', host=db_host, user=db_user, passwd=db_passwords,
-                                            port=3306)
+production_combined_data_db = MySQLDatabase('production_combined_data', host=db_host, user=db_user, passwd=db_passwords, port=3306)
 
 
 ###############################################
