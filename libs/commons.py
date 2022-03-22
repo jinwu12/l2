@@ -1,4 +1,5 @@
 import logging
+import logging.config
 
 import mysql.connector
 from configparser import ConfigParser
@@ -19,8 +20,9 @@ def create_logger(name='app'):
         logger = logging.getLogger(name)
         logger.setLevel(logging.INFO)
         log_map[name] = logger
-        # 输出到日志文件
-        handler = logging.FileHandler(name+".txt")
+        # 输出到日志文件,按天分文件，保存30天
+        handler = logging.handlers.TimedRotatingFileHandler('logs/'+name+'_today.log', 'D', 1 , 30)
+        handler.suffix = "%Y-%m-%d.log"
         handler.setLevel(logging.INFO)
         handler.setFormatter(logging.Formatter(LOG_FORMAT))
         logger.addHandler(handler)

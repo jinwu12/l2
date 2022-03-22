@@ -82,7 +82,7 @@ def get_historical_data_from_mt5(symbol, interval, start, end):
 
 
 # 封装入库实时数据schedule函数
-def update_realtime_data(interval):
+def update_realtime_data(interval, skip_symbol = []):
     # 初始化数据库连接
     symbols = Symbol.select()
     # 结果列表
@@ -97,13 +97,17 @@ def update_realtime_data(interval):
         yf_rates = []
         mt5_rates = []
         dxy_rates = []
+        #如果遇到需要跳过的symbol，则直接跳过此symbol的拉取
+        if symbol_name in skip_symbol:
+            continue
         # 用于保存每种计算方式的字典
         data_dict = dict(symbol=symbol_value, interval=interval, timezone=timezone, method=method)
         # 拉取yfinance数据源的symbol数据
         if method == 'get_historical_data_from_yfinance':
             # 生成时间间隔，必需按照时区转换时间后，按照隔日进行拉取
+            #实时数据拉取的start和end必须只传到日为止，比如2022-03-21，不能在后面带时分秒，否则会报错
             yf_tz = pytz.timezone(timezone)
-            yf_start_time = yf_tz.localize(datetime.now())
+            yf_start_time = datetime.now(tz=yf_tz).date()
             yf_end_time = yf_start_time + timedelta(days=1)
             # yfinance的分钟级及小时级数据拉取逻辑一致
             # 拉取数据，并截取最后一个元素作为结果
