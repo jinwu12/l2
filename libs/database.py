@@ -14,6 +14,10 @@ db_passwords = cfg.get('database', 'passwords')
 ################################################
 config_db = MySQLDatabase('Global_Config', host=db_host, user=db_user, passwd=db_passwords, port=3306)
 
+#信号类型对象
+
+#已产生的信号对象
+
 #PivotReport基础对象
 class PivotReport(Model):
     #自增ID
