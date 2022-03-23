@@ -50,7 +50,7 @@ class PivotReport(Model):
     #开始记录时间，默认值应为combination最早有记录的时间, 以utc0时区的时间戳存储
     start_date = BigIntegerField(column_name='start_date', null=False)
     #备注
-    comments = TextField(collumn_name='comments')
+    comments = TextField(column_name='comments')
 
     # 存放在config_db中
     class Meta:
