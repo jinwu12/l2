@@ -14,9 +14,26 @@ db_passwords = cfg.get('database', 'passwords')
 ################################################
 config_db = MySQLDatabase('Global_Config', host=db_host, user=db_user, passwd=db_passwords, port=3306)
 
-#信号类型对象
+#信号类型对象，存储在Global_config中
+class SignalType(Model):
+    #自增ID
+    id = AutoField(column_name='id', primary_key=True)
+    #信号名称
+    signal_name = CharField(column_name='signal_name', max_length=16, null=False)
+    #信号方向
+    direction = CharField(column_name='direction', max_length=8, null=False)
+    #备注
+    commments = TextField(column_name='comments')
 
-#已产生的信号对象
+    #存放在Global_Config库中
+    class Meta:
+        database = config_db
+        table_name = 'signal_type'
+        indexes = (
+            (('signal_name', 'direction'), True),
+        )
+
+
 
 #PivotReport基础对象
 class PivotReport(Model):
@@ -96,6 +113,32 @@ class Symbol(Model):
     class Meta:
         database = config_db
         table_name = "Tbl_symbol_method"
+
+
+
+###############################################
+#已产生的信号对象，存放在production_signal库中
+production_signal_db = MySQLDatabase('production_signal', host=db_host, user=db_user, passwd=db_passwords, port=3306)
+
+class Signal(Model):
+   #自增ID
+   id = AutoField(column_name='id', primary_key=True) 
+   #信号所在的行情记录表
+   pivot_report_id = BigIntegerField(column_name='pivot_report_id', null=False)
+   #信号发生的时间点，以utc0时间戳记录
+   ts = BigIntegerField(column_name='ts', null=False)
+   #信号发生时的所在记录栏
+   occurred_column = SmallIntegerField(column_name='occurred_column', null=False)
+   #信号发生时的价格，需要取该时间点的开盘价
+   price = DoubleField(column_name='price', null=False)
+   #该信号是否已被确认
+   is_confirmed = BooleanField(column_name='is_confirmed', null=False)
+   #该信号的类型
+   signal_type = BigIntegerField(column_name='signal_type', null=False)
+
+   class Meta:
+       database = production_signal_db
+       table_name = 'signal_data'
 
 
 ###############################################
