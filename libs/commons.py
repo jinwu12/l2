@@ -60,12 +60,14 @@ def db_connect():
     db_host = cfg.get('database','host')
     db_user = cfg.get('database','user')
     db_passwords = cfg.get('database','passwords')
+    port = cfg.get('database', 'port')
     
     #连接数据库
     mydb = mysql.connector.connect(
             host = db_host,
             user = db_user,
-            passwd = db_passwords
+            passwd = db_passwords,
+            port = port
             )
     return mydb
 
