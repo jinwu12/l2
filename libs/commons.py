@@ -7,10 +7,9 @@ from datetime import datetime
 
 import pytz
 
-LOG_FORMAT = '%(asctime)s - %(name)s[%(filename)s:%(lineno)d] - %(levelname)s - %(message)s'
+LOG_FORMAT = '%(asctime)s - %(name)s[%(filename)s:%(lineno)d] [%(threadName)s] - %(levelname)s - %(message)s'
 # logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 log_map = {}
-
 
 
 # 创建日志对象
@@ -21,7 +20,7 @@ def create_logger(name='app'):
         logger.setLevel(logging.INFO)
         log_map[name] = logger
         # 输出到日志文件,按天分文件，保存30天
-        handler = logging.handlers.TimedRotatingFileHandler('logs/'+name+'_today.log', 'D', 1 , 30)
+        handler = logging.handlers.TimedRotatingFileHandler('logs/' + name + '.log', 'D', 1, 30)
         handler.suffix = "%Y-%m-%d.log"
         handler.setLevel(logging.INFO)
         handler.setFormatter(logging.Formatter(LOG_FORMAT))
@@ -51,23 +50,19 @@ def datetime_str_with_timezone_to_timestamp(time):
     return datetime.strptime(time, '%Y-%m-%d %H:%M:%S%z').timestamp()
 
 
-
-#根据配置文件中的db配置，连接数据库
+# 根据配置文件中的db配置，连接数据库
 def db_connect():
-    #读取配置文件中的数据配置
+    # 读取配置文件中的数据配置
     cfg = ConfigParser()
     cfg.read('./config.ini')
-    db_host = cfg.get('database','host')
-    db_user = cfg.get('database','user')
-    db_passwords = cfg.get('database','passwords')
-    
-    #连接数据库
+    db_host = cfg.get('database', 'host')
+    db_user = cfg.get('database', 'user')
+    db_passwords = cfg.get('database', 'passwords')
+
+    # 连接数据库
     mydb = mysql.connector.connect(
-            host = db_host,
-            user = db_user,
-            passwd = db_passwords
-            )
+        host=db_host,
+        user=db_user,
+        passwd=db_passwords
+    )
     return mydb
-
-
-
