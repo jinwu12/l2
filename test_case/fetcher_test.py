@@ -1,7 +1,6 @@
 import ssl
 import unittest
 from datetime import datetime
-import time
 
 import pytz
 import yfinance as yf
@@ -63,6 +62,56 @@ class MyTestCase(unittest.TestCase):
         data = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_H1, start, end)
         print(data)
         print(25, len(data))
+
+    def test_yfinance_download(self):
+        # yfinance的download方法中的start和end参数支持str(精确到天)和datetime两种形式，
+        # 到实现层时，将以当前时区(忽略datetime中的时区)转换为时间戳去获取具体的数据，
+        # 而返回的数据带时间偏移，比如2022-03-24 10:12:00-04:00
+        try:
+            start = datetime(2022, 3, 24, 22, 12, 0, tzinfo=pytz.timezone('ETC/GMT-8'))
+            end = datetime(2022, 3, 24, 22, 13, 0, tzinfo=pytz.timezone('ETC/GMT-8'))
+            # 时间区间是前闭后开，比较奇怪的是返回了一个23:59的数据，先去掉
+            data = yf.download(tickers='^TNX', interval='1m', start=start, end=end, progress=False)
+            data = data[:-1]  # 去掉23:59:00这条数据
+            print(data)
+            self.assertEqual(1, len(data))
+            self.assertEqual(1, len(data.index.tolist()))
+            # 返回的数据timestamp与start对应一致
+            self.assertEqual(start.timestamp(), data.index.tolist()[0].to_pydatetime().timestamp())
+            ts = start.timestamp()
+
+            start = datetime(2022, 3, 24, 22, 12, 0, tzinfo=pytz.timezone('ETC/UTC'))
+            end = datetime(2022, 3, 24, 22, 13, 0, tzinfo=pytz.timezone('ETC/UTC'))
+            utc_data = yf.download(tickers='^TNX', interval='1m', start=start, end=end, progress=False)
+            utc_data = utc_data[:-1]  # 去掉23:59:00这条数据
+            print(utc_data)
+            self.assertEqual(1, len(utc_data))
+            self.assertEqual(1, len(utc_data.index.tolist()))
+            # 返回的数据timestamp与start不一致！
+            self.assertNotEqual(start.timestamp(), utc_data.index.tolist()[0].to_pydatetime().timestamp())
+            # 返回的数据timestamp与start时间的字面时间转本地时区对应的时间戳一致！=》说明传入的时间参数的时区被忽略了，以当前时区为准了
+            self.assertEqual(ts, utc_data.index.tolist()[0].to_pydatetime().timestamp())
+            # 数据其实是一致的
+            self.assertEqual(data.values.tolist(), utc_data.values.tolist())
+
+            # 再试试其他时区
+            start = datetime(2022, 3, 24, 22, 12, 0, tzinfo=pytz.timezone('ETC/GMT+3'))
+            end = datetime(2022, 3, 24, 22, 13, 0, tzinfo=pytz.timezone('ETC/GMT+3'))
+            # 时间区间是前闭后开，比较奇怪的是返回了一个23:59的数据，先去掉
+            data2 = yf.download(tickers='^TNX', interval='1m', start=start, end=end, progress=False)
+            data2 = data2[:-1]  # 去掉23:59:00这条数据
+            print(data2)
+            self.assertEqual(1, len(data2))
+            self.assertEqual(1, len(data2.index.tolist()))
+            # 返回的数据timestamp与start不一致！
+            self.assertNotEqual(start.timestamp(), data2.index.tolist()[0].to_pydatetime().timestamp())
+            # 返回的数据timestamp与start时间的字面时间转本地时区对应的时间戳一致！=》说明传入的时间参数的时区被忽略了，以当前时区为准了
+            self.assertEqual(ts, data2.index.tolist()[0].to_pydatetime().timestamp())
+            # 数据其实是一致的
+            self.assertEqual(data.values.tolist(), data2.values.tolist())
+            self.assertEqual(utc_data.values.tolist(), data2.values.tolist())
+        except (ssl.SSLEOFError, ssl.SSLError):
+            self.fail("error....")
 
     def test_get_historical_data_from_yfinance(self):
         now = datetime.now()
