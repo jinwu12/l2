@@ -58,10 +58,10 @@ class MyTestCase(unittest.TestCase):
 
         # 下面是获取小时数据的情况
         start = datetime(2022, 3, 15, 0, 0, 0, tzinfo=pytz.timezone('UTC'))
-        end = datetime(2022, 3, 17, 0, 0, 0, tzinfo=pytz.timezone('UTC'))
+        end = datetime(2022, 3, 16, 0, 0, 0, tzinfo=pytz.timezone('UTC'))
         data = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_H1, start, end)
         print(data)
-        print(25, len(data))
+        self.assertEqual(25, len(data))
 
     def test_yfinance_download(self):
         # yfinance的download方法中的start和end参数支持str(精确到天)和datetime两种形式，
