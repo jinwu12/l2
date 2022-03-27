@@ -53,6 +53,7 @@ def make_transfer():
     for table in tables:
         tbl = table[0]
         if ("_1h" in tbl or "_1m" in tbl) and len(tbl[str.rindex(tbl, "_") + 1:]) == 6:  # 不处理表名不合法的
+        # if "DXY_1m_original_data_202112" in tbl and len(tbl[str.rindex(tbl, "_") + 1:]) == 6:  # 不处理表名不合法的
             # 数据校验
             # if not verify_records(db, tbl, '1h' if "_1h" in tbl else "1m"):
                 # print("表数据校验失败：", tbl)
