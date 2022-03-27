@@ -130,7 +130,7 @@ def update_realtime_data(interval, skip_symbol=[]):
             # 拉取数据，并截取最后一个元素作为结果
             try:
                 yf_rates.append(get_historical_data_from_yfinance(
-                    symbol_value, interval, yf_start_time, yf_end_time)[-1])
+                    symbol_value, interval, yf_start_time, yf_end_time,'1d')[-1])
             except IndexError:
                 logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
             else:
