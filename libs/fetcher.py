@@ -1,31 +1,38 @@
+import math
 import ssl
 from datetime import datetime, timedelta
 from decimal import Decimal
-import pytz
-import math
 
+import MetaTrader5 as mt5
 import pandas as pd
+import pytz
+import yfinance as yf
 from retrying import retry
 
 from libs.database import *
-import yfinance as yf
-import MetaTrader5 as mt5
 
 logger = commons.create_logger()
 
 
 # 从yfinance拉取指定时间周期内的数据，并且将时间标准化为时间戳
 @retry(stop_max_attempt_number=3, wait_random_min=5, wait_random_max=10)
-def get_historical_data_from_yfinance(symbol, interval, start, end):
-    # valid intervals: 1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo
-    # 根据symbol name获取拉取用的symbol value
-    # 1m级别的数据只有近7天的
-    # 根据输入参数拉取原始数据
+def get_historical_data_from_yfinance(symbol, interval, start, end, period=''):
+    """
+    从yfinance拉取指定时间区段(闭区间)、指定时间间隔的汇率(rates)数据
+    :param symbol: 货币符号，使用Symbol对象时，请传value属性
+    :param interval: 时间间隔，1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo，1m级别的数据只有近7天的
+    :param start: 开始时间(datetime对象，构建时请指定为当前时区 => 到实现层时，将以当前时区(忽略datetime中的时区)转换为时间戳去获取具体的数据)
+    :param end: 结束时间(datetime对象，构建时请指定为当前时区 = > 到实现层时，将以当前时区(忽略datetime中的时区)转换为时间戳去获取具体的数据)
+    :param period: 拉取周期，默认为空，如果传了这个参数则不使用startt和end，避免拉取结果中多的最后一条奇怪数据，可选值有1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max
+    :return: 汇率数据(dict列表)，如
+        [{'symbol': '^TNX', 'interval': '1h', 'ts': 1641394800, 'price_open': '1.6490', 'price_high': '1.6580',
+        'price_low': '1.6470', 'price_closed': '1.6530'}, ...]
+    """
     try:
-        # yfinance的download方法中的start和end参数支持str(精确到天)和datetime两种形式，
-        # 到实现层时，将以当前时区(忽略datetime中的时区)转换为时间戳去获取具体的数据，
-        # 而返回的数据带时间偏移，比如2022-03-24 10:12:00-04:00
-        o_data = yf.download(tickers=symbol, interval=interval, start=start, end=end, progress=False)
+        if period:
+            o_data = yf.download(tickers=symbol, interval=interval, period=period, progress=False)
+        else:
+            o_data = yf.download(tickers=symbol, interval=interval, start=start, end=end, progress=False)
     except (ssl.SSLEOFError, ssl.SSLError):
         logger.error("%s:拉取%s~%s@interval:%s失败", symbol, str(start), str(end), interval)
         return False
@@ -38,10 +45,10 @@ def get_historical_data_from_yfinance(symbol, interval, start, end):
         # 将第一列时间转timestamp
         ts = int(pd_timestamp.to_pydatetime().timestamp())
         # 获取开盘价、最高价、最低价和调整后的收盘价;价格取小数点后4位
-        open_price = Decimal(row['Open']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP")
-        high_price = Decimal(row['High']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP")
-        low_price = Decimal(row['Low']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP")
-        close_price = Decimal(row['Adj Close']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP")
+        open_price = str(Decimal(row['Open']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
+        high_price = str(Decimal(row['High']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
+        low_price = str(Decimal(row['Low']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
+        close_price = str(Decimal(row['Adj Close']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
         # 将该列列表附加到结果列表中进行嵌套
         result_list.append(dict(symbol=symbol, interval=interval, ts=ts,
                                 price_open=open_price, price_high=high_price,
@@ -51,6 +58,16 @@ def get_historical_data_from_yfinance(symbol, interval, start, end):
 
 # 从mt5拉取制定时间周期内的数据，并将时间标准化为utc时间戳
 def get_historical_data_from_mt5(symbol, interval, start, end):
+    """
+    从mt5拉取指定时间区段(闭区间)、指定时间间隔的汇率(rates)数据
+    :param symbol: 货币符号，使用Symbol对象时，请传value属性
+    :param interval: 时间间隔，一般有一分钟(1m)，一小时(1h)，一天(1d)等，目前仅支持一分钟和一小时
+    :param start: 开始时间(datetime对象，构建时请指定时区)
+    :param end: 结束时间(datetime对象，构建时请指定时区)
+    :return: 汇率数据(dict列表)，如
+        [{'symbol': 'XAUUSD', 'interval': '1h', 'ts': 1648108800, 'price_open': 1940.27,
+        'price_high': 1940.38, 'price_low': 1937.8, 'price_closed': 1938.18}, ...]
+    """
     # 初始化mt5指定账号的mt5连接
     account_info = AccountInfo.get_by_id(1)
     auth = mt5.initialize(
@@ -64,9 +81,6 @@ def get_historical_data_from_mt5(symbol, interval, start, end):
 
     # 使用copy_rates_range函数获取该区间内数据
     # interval传入必须按照timeframe格式，如TIMEFRAME_M1、TIMEFRAME_H1。详情请参考:https://www.mql5.com/en/docs/integration/python_metatrader5/mt5copyratesfrom_py#timeframe
-    # 可以考虑将timeframe与interval对应关系入库
-    # 将结果转为list及结果中的tuple转换为list，方便后续使用
-    # icmarkets+mt5默认返回的就是utc时间戳，无需额外转换
     rates_range = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_H1 if interval == '1h' else mt5.TIMEFRAME_M1, start, end)
     if rates_range is None:
         logger.info("无数据")
@@ -85,7 +99,7 @@ def get_historical_data_from_mt5(symbol, interval, start, end):
 
 
 # 封装入库实时数据schedule函数
-def update_realtime_data(interval, skip_symbol = []):
+def update_realtime_data(interval, skip_symbol=[]):
     # 初始化数据库连接
     symbols = Symbol.select()
     # 结果列表
@@ -100,7 +114,7 @@ def update_realtime_data(interval, skip_symbol = []):
         yf_rates = []
         mt5_rates = []
         dxy_rates = []
-        #如果遇到需要跳过的symbol，则直接跳过此symbol的拉取
+        # 如果遇到需要跳过的symbol，则直接跳过此symbol的拉取
         if symbol_name in skip_symbol:
             continue
         # 用于保存每种计算方式的字典
@@ -108,7 +122,7 @@ def update_realtime_data(interval, skip_symbol = []):
         # 拉取yfinance数据源的symbol数据
         if method == 'get_historical_data_from_yfinance':
             # 生成时间间隔，必需按照时区转换时间后，按照隔日进行拉取
-            #实时数据拉取的start和end必须只传到日为止，比如2022-03-21，不能在后面带时分秒，否则会报错
+            # 实时数据拉取的start和end必须只传到日为止，比如2022-03-21，不能在后面带时分秒，否则会报错
             yf_tz = pytz.timezone(timezone)
             yf_start_time = datetime.now(tz=yf_tz).date()
             yf_end_time = yf_start_time + timedelta(days=1)
@@ -116,7 +130,7 @@ def update_realtime_data(interval, skip_symbol = []):
             # 拉取数据，并截取最后一个元素作为结果
             try:
                 yf_rates.append(get_historical_data_from_yfinance(
-                    symbol_value, interval, yf_start_time, yf_end_time)[-1])
+                    symbol_value, interval, yf_start_time, yf_end_time,'1d')[-1])
             except IndexError:
                 logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
             else:
