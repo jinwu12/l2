@@ -121,21 +121,13 @@ class MyTestCase(unittest.TestCase):
         data = fetcher.get_historical_data_from_yfinance(symbol, interval, start, end)
         self.assertEqual(4, len(data))
         records = [{'symbol': symbol, 'interval': interval, 'ts': int(start.timestamp()),
-                    'price_open': '1.5340',
-                    'price_high': '1.6350', 'price_low': '1.5330',
-                    'price_closed': '1.6280'},
+                    'price_open': 1.5340, 'price_high': 1.6350, 'price_low': 1.5330, 'price_closed': 1.6280},
                    {'symbol': symbol, 'interval': interval, 'ts': int((start + timedelta(days=1)).timestamp()),
-                    'price_open': '1.6630',
-                    'price_high': '1.6860', 'price_low': '1.6540',
-                    'price_closed': '1.6680'},
+                    'price_open': 1.6630, 'price_high': 1.6860, 'price_low': 1.6540, 'price_closed': 1.6680},
                    {'symbol': symbol, 'interval': interval, 'ts': int((start + timedelta(days=2)).timestamp()),
-                    'price_open': '1.6600',
-                    'price_high': '1.7100', 'price_low': '1.6470',
-                    'price_closed': '1.7050'},
+                    'price_open': 1.6600, 'price_high': 1.7100, 'price_low': 1.6470, 'price_closed': 1.7050},
                    {'symbol': symbol, 'interval': interval, 'ts': int((start + timedelta(days=3)).timestamp()),
-                    'price_open': '1.7330',
-                    'price_high': '1.7440', 'price_low': '1.7210',
-                    'price_closed': '1.7330'},
+                    'price_open': 1.7330, 'price_high': 1.7440, 'price_low': 1.7210, 'price_closed': 1.7330},
                    ]
         self.assertEqual(records, data)
         # 小时级数据
