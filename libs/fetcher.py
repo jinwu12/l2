@@ -16,22 +16,23 @@ logger = commons.create_logger()
 
 # 从yfinance拉取指定时间周期内的数据，并且将时间标准化为时间戳
 @retry(stop_max_attempt_number=3, wait_random_min=5, wait_random_max=10)
-def get_historical_data_from_yfinance(symbol, interval, start, end):
+def get_historical_data_from_yfinance(symbol, interval, start, end, period=''):
     """
     从yfinance拉取指定时间区段(闭区间)、指定时间间隔的汇率(rates)数据
     :param symbol: 货币符号，使用Symbol对象时，请传value属性
     :param interval: 时间间隔，1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo，1m级别的数据只有近7天的
     :param start: 开始时间(datetime对象，构建时请指定为当前时区 => 到实现层时，将以当前时区(忽略datetime中的时区)转换为时间戳去获取具体的数据)
     :param end: 结束时间(datetime对象，构建时请指定为当前时区 = > 到实现层时，将以当前时区(忽略datetime中的时区)转换为时间戳去获取具体的数据)
+    :param period: 拉取周期，默认为空，如果传了这个参数则不使用startt和end，避免拉取结果中多的最后一条奇怪数据，可选值有1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max
     :return: 汇率数据(dict列表)，如
         [{'symbol': '^TNX', 'interval': '1h', 'ts': 1641394800, 'price_open': '1.6490', 'price_high': '1.6580',
         'price_low': '1.6470', 'price_closed': '1.6530'}, ...]
     """
     try:
-        # yfinance的download方法中的start和end参数支持str(精确到天)和datetime两种形式，
-        # 到实现层时，将以当前时区(忽略datetime中的时区)转换为时间戳去获取具体的数据，
-        # 而返回的数据带时间偏移，比如2022-03-24 10:12:00-04:00
-        o_data = yf.download(tickers=symbol, interval=interval, start=start, end=end, progress=False)
+        if period:
+            o_data = yf.download(tickers=symbol, interval=interval, period=period, progress=False)
+        else:
+            o_data = yf.download(tickers=symbol, interval=interval, start=start, end=end, progress=False)
     except (ssl.SSLEOFError, ssl.SSLError):
         logger.error("%s:拉取%s~%s@interval:%s失败", symbol, str(start), str(end), interval)
         return False
