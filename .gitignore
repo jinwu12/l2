@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 .vscode/launch.json
 .vscode/settings.json
+
+test_case/logs
