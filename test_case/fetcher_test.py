@@ -1,11 +1,9 @@
-import decimal
 import ssl
 import unittest
 from datetime import datetime, timedelta
 
 import pytz
 import yfinance as yf
-from dateutil.relativedelta import relativedelta
 
 from libs import fetcher
 from libs.database import *
@@ -123,21 +121,21 @@ class MyTestCase(unittest.TestCase):
         data = fetcher.get_historical_data_from_yfinance(symbol, interval, start, end)
         self.assertEqual(4, len(data))
         records = [{'symbol': symbol, 'interval': interval, 'ts': int(start.timestamp()),
-                    'price_open': decimal.Decimal('1.5340'),
-                    'price_high': decimal.Decimal('1.6350'), 'price_low': decimal.Decimal('1.5330'),
-                    'price_closed': decimal.Decimal('1.6280')},
+                    'price_open': '1.5340',
+                    'price_high': '1.6350', 'price_low': '1.5330',
+                    'price_closed': '1.6280'},
                    {'symbol': symbol, 'interval': interval, 'ts': int((start + timedelta(days=1)).timestamp()),
-                    'price_open': decimal.Decimal('1.6630'),
-                    'price_high': decimal.Decimal('1.6860'), 'price_low': decimal.Decimal('1.6540'),
-                    'price_closed': decimal.Decimal('1.6680')},
+                    'price_open': '1.6630',
+                    'price_high': '1.6860', 'price_low': '1.6540',
+                    'price_closed': '1.6680'},
                    {'symbol': symbol, 'interval': interval, 'ts': int((start + timedelta(days=2)).timestamp()),
-                    'price_open': decimal.Decimal('1.6600'),
-                    'price_high': decimal.Decimal('1.7100'), 'price_low': decimal.Decimal('1.6470'),
-                    'price_closed': decimal.Decimal('1.7050')},
+                    'price_open': '1.6600',
+                    'price_high': '1.7100', 'price_low': '1.6470',
+                    'price_closed': '1.7050'},
                    {'symbol': symbol, 'interval': interval, 'ts': int((start + timedelta(days=3)).timestamp()),
-                    'price_open': decimal.Decimal('1.7330'),
-                    'price_high': decimal.Decimal('1.7440'), 'price_low': decimal.Decimal('1.7210'),
-                    'price_closed': decimal.Decimal('1.7330')},
+                    'price_open': '1.7330',
+                    'price_high': '1.7440', 'price_low': '1.7210',
+                    'price_closed': '1.7330'},
                    ]
         self.assertEqual(records, data)
         # 小时级数据
@@ -149,24 +147,28 @@ class MyTestCase(unittest.TestCase):
         print(data)
         self.assertEqual(8, len(data))  # 7条，加一条奇怪的数据...
         print('------------')
-        print("入参：start="+start.strftime('%Y-%m-%d %H:%M:%S%z'), ", end="+end.strftime('%Y-%m-%d %H:%M:%S%z'))
+        print("入参：start=" + start.strftime('%Y-%m-%d %H:%M:%S%z'), ", end=" + end.strftime('%Y-%m-%d %H:%M:%S%z'))
         for item in data:
             print(commons.timestamp_to_datetime_str(item['ts'], 'ETC/GMT+4'), item)
 
     def test_get_historical_data_from_mt5(self):
         symbol = "XAUUSD"
         interval = "1h"
-        start = datetime.now() - relativedelta(days=3)
-        end = datetime.now()
+        start = datetime(2022, 3, 24, 18, 00, 0, tzinfo=pytz.timezone('ETC/UTC'))
+        end = datetime(2022, 3, 24, 22, 00, 0, tzinfo=pytz.timezone('ETC/UTC'))
         data_list = fetcher.get_historical_data_from_mt5(symbol, interval, start, end)
-        print(data_list)
+        for item in data_list:
+            print(item)
+        self.assertEqual(5, len(data_list))
+        self.assertEqual({'symbol': 'XAUUSD', 'interval': '1h', 'ts': 1648144800, 'price_open': 1964.86,
+                          'price_high': 1965.54, 'price_low': 1958.51, 'price_closed': 1963.0}, data_list[0])
 
     def test_fetch_data(self):
         interval = "1h"
         # start = datetime.now() - relativedelta(days=3)
         # end = datetime.now()
-        start = datetime.strptime('2022-01-01 0:0:0', '%Y-%m-%d %H:%M:%S')
-        end = datetime.strptime('2022-01-03 0:0:0', '%Y-%m-%d %H:%M:%S')
+        start = datetime.strptime('2022-01-03 0:0:0', '%Y-%m-%d %H:%M:%S')
+        end = datetime.strptime('2022-01-05 0:0:0', '%Y-%m-%d %H:%M:%S')
         fetcher.fetch_data(start, end, interval)
 
 
