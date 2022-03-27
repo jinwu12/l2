@@ -2,7 +2,7 @@ import datetime
 import sys
 
 sys.path.append("..")
-from libs import commons, gen_combinations_price
+from libs import gen_combinations_price
 from libs.database import *
 import unittest
 
@@ -51,10 +51,31 @@ class TestFunctions(unittest.TestCase):
         result = gen_combinations_price.cal_comb_price_strict_match(data, 1)
         print(result)
 
-
     def test_check_combinations(self):
         gen_combinations_price.check_combinations()
 
+    def test_calc_combo_price(self):
+        rate1 = {'symbol': 'XAUUSD', 'interval': '1h', 'ts': 1641394800, 'price_open': 1.6490, 'price_high': 1.6580,
+                 'price_low': 1.6470, 'price_closed': 1.6530}
+        rate2 = {'symbol': 'EURUSD', 'interval': '1h', 'ts': 1641394800, 'price_open': 2.250, 'price_high': 2.580,
+                 'price_low': 2.490, 'price_closed': 2.560}
+        symbol_rates_list = [rate1, rate2]
+        combination = Combination(id=1, name='XAUUSD_EURUSD_strict_match', symbol_list='1,4')
+        # 假定XAUUSD和EURUSD的3点价都为5
+        rate1_trio_price = 5
+        rate2_trio_price = 5
+        result, data = gen_combinations_price.calc_combo_price(symbol_rates_list, combination, 'strict_match')
+        self.assertTrue(result)
+        print(data['combination_price'])
+        # 计算组合价: 计算组合价格=∑[(symbol价格/symbol 3point_price)*3]  先*3再求和
+        self.assertEqual(rate1['price_open'] / rate1_trio_price * 3 + rate2['price_open'] / rate2_trio_price * 3,
+                         data['combination_price'][2])
+        self.assertEqual(rate1['price_high'] / rate1_trio_price * 3 + rate2['price_high'] / rate2_trio_price * 3,
+                         data['combination_price'][3])
+        self.assertEqual(rate1['price_low'] / rate1_trio_price * 3 + rate2['price_low'] / rate2_trio_price * 3,
+                         data['combination_price'][4])
+        self.assertEqual(rate1['price_closed'] / rate1_trio_price * 3 + rate2['price_closed'] / rate2_trio_price * 3,
+                         data['combination_price'][5])
 
-if __name__ == '__main__':
-    unittest.main()
+    if __name__ == '__main__':
+        unittest.main()
