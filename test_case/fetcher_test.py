@@ -1,6 +1,7 @@
+import decimal
 import ssl
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 import yfinance as yf
@@ -114,19 +115,43 @@ class MyTestCase(unittest.TestCase):
             self.fail("error....")
 
     def test_get_historical_data_from_yfinance(self):
-        now = datetime.now()
+        # 天级数据
         symbol = '^TNX'
-        interval = '1m'
-        data = fetcher.get_historical_data_from_yfinance(symbol, interval, now - relativedelta(days=7), now,
-                                                         'ETC/GMT-8')
-        # 存档进数据库
-        # from libs.database import Tnx
-        # Tnx.insert_many(data).execute()
-        self.assertEqual(len(data) > 0, True)
-        record = data[0]
-        print(record)
-        self.assertEqual(symbol, record['symbol'])
-        self.assertEqual(interval, record['interval'])
+        interval = '1d'
+        start = datetime(2022, 1, 3)
+        end = datetime(2022, 1, 7)
+        data = fetcher.get_historical_data_from_yfinance(symbol, interval, start, end)
+        self.assertEqual(4, len(data))
+        records = [{'symbol': symbol, 'interval': interval, 'ts': int(start.timestamp()),
+                    'price_open': decimal.Decimal('1.5340'),
+                    'price_high': decimal.Decimal('1.6350'), 'price_low': decimal.Decimal('1.5330'),
+                    'price_closed': decimal.Decimal('1.6280')},
+                   {'symbol': symbol, 'interval': interval, 'ts': int((start + timedelta(days=1)).timestamp()),
+                    'price_open': decimal.Decimal('1.6630'),
+                    'price_high': decimal.Decimal('1.6860'), 'price_low': decimal.Decimal('1.6540'),
+                    'price_closed': decimal.Decimal('1.6680')},
+                   {'symbol': symbol, 'interval': interval, 'ts': int((start + timedelta(days=2)).timestamp()),
+                    'price_open': decimal.Decimal('1.6600'),
+                    'price_high': decimal.Decimal('1.7100'), 'price_low': decimal.Decimal('1.6470'),
+                    'price_closed': decimal.Decimal('1.7050')},
+                   {'symbol': symbol, 'interval': interval, 'ts': int((start + timedelta(days=3)).timestamp()),
+                    'price_open': decimal.Decimal('1.7330'),
+                    'price_high': decimal.Decimal('1.7440'), 'price_low': decimal.Decimal('1.7210'),
+                    'price_closed': decimal.Decimal('1.7330')},
+                   ]
+        self.assertEqual(records, data)
+        # 小时级数据
+        symbol = '^TNX'
+        interval = '1h'
+        start = datetime(2022, 1, 5, tzinfo=pytz.timezone('ETC/GMT+4'))
+        end = datetime(2022, 1, 6, tzinfo=pytz.timezone('ETC/GMT+4'))
+        data = fetcher.get_historical_data_from_yfinance(symbol, interval, start, end)
+        print(data)
+        self.assertEqual(8, len(data))  # 7条，加一条奇怪的数据...
+        print('------------')
+        print("入参：start="+start.strftime('%Y-%m-%d %H:%M:%S%z'), ", end="+end.strftime('%Y-%m-%d %H:%M:%S%z'))
+        for item in data:
+            print(commons.timestamp_to_datetime_str(item['ts'], 'ETC/GMT+4'), item)
 
     def test_get_historical_data_from_mt5(self):
         symbol = "XAUUSD"

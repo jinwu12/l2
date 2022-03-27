@@ -16,13 +16,16 @@ logger = commons.create_logger()
 
 # 从yfinance拉取指定时间周期内的数据，并且将时间标准化为时间戳
 @retry(stop_max_attempt_number=3, wait_random_min=5, wait_random_max=10)
-def get_historical_data_from_yfinance(symbol, interval, start, end, timezone):
+def get_historical_data_from_yfinance(symbol, interval, start, end):
     # valid intervals: 1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo
     # 根据symbol name获取拉取用的symbol value
     # 1m级别的数据只有近7天的
     # 根据输入参数拉取原始数据
     try:
-        o_data = yf.download(tickers=symbol, interval=interval, start=start, end=end)
+        # yfinance的download方法中的start和end参数支持str(精确到天)和datetime两种形式，
+        # 到实现层时，将以当前时区(忽略datetime中的时区)转换为时间戳去获取具体的数据，
+        # 而返回的数据带时间偏移，比如2022-03-24 10:12:00-04:00
+        o_data = yf.download(tickers=symbol, interval=interval, start=start, end=end, progress=False)
     except (ssl.SSLEOFError, ssl.SSLError):
         logger.error("%s:拉取%s~%s@interval:%s失败", symbol, str(start), str(end), interval)
         return False
@@ -113,7 +116,7 @@ def update_realtime_data(interval, skip_symbol = []):
             # 拉取数据，并截取最后一个元素作为结果
             try:
                 yf_rates.append(get_historical_data_from_yfinance(
-                    symbol_value, interval, yf_start_time, yf_end_time, timezone)[-1])
+                    symbol_value, interval, yf_start_time, yf_end_time)[-1])
             except IndexError:
                 logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
             else:
@@ -340,7 +343,7 @@ def fetch_data(start, end, interval):
         logger.info("开始抓取数据：%s between %s ~ %s @ %s" % (symbol.symbol_value, start, end, interval))
         # 拉取yfinance数据源的symbol数据
         if symbol.method == 'get_historical_data_from_yfinance':
-            data_list = get_historical_data_from_yfinance(symbol.symbol_value, interval, start, end, symbol.timezone)
+            data_list = get_historical_data_from_yfinance(symbol.symbol_value, interval, start, end)
         elif symbol.method == 'get_historical_data_from_mt5':
             # mt5数据间隔转换，需要把小时或分钟等间隔转换为TIMEFRAME；详情可参考：https://www.mql5.com/en/docs/integration/python_metatrader5/mt5copyratesfrom_py#timeframe
             # 目前只支持1h和1m转换，需要的话继续加条件就好了
