@@ -1,5 +1,6 @@
 import datetime
 import sys
+from unittest.mock import Mock
 
 sys.path.append("..")
 from libs import gen_combinations_price
@@ -59,13 +60,17 @@ class TestFunctions(unittest.TestCase):
                  'price_low': 1.6470, 'price_closed': 1.6530}
         rate2 = {'symbol': 'EURUSD', 'interval': '1h', 'ts': 1641394800, 'price_open': 2.250, 'price_high': 2.580,
                  'price_low': 2.490, 'price_closed': 2.560}
+        ##### mock #########
+        # 指定XAUUSD和EURUSD的3点价
+        rate1_trio_price = 4.2
+        rate2_trio_price = 5
+        values = {1: Symbol(id=1, name='XAUUSD', symbol_value='XAUUSD', trio_point_price=rate1_trio_price),
+                  4: Symbol(id=4, name='EURUSD', symbol_value='EURUSD', trio_point_price=rate2_trio_price)}
+        global_cache.get_symbol_by_id = Mock(side_effect=lambda x: values.get(x))
         ############ strict_match #############
         # 正常计算
         symbol_rates_list = [rate1, rate2]
         combination = Combination(id=1, name='XAUUSD_EURUSD_strict_match', symbol_list='1,4')
-        # 假定XAUUSD和EURUSD的3点价都为5
-        rate1_trio_price = 5
-        rate2_trio_price = 5
         result, data = gen_combinations_price.calc_combo_price(symbol_rates_list, combination, 'strict_match')
         self.assertTrue(result)
         print(data['combination_price'])
@@ -95,7 +100,7 @@ class TestFunctions(unittest.TestCase):
         self.assertFalse(result)
         self.assertIsNone(data)
 
-        # 给的rates数据ts相关超过1个interval
+        # 给的rates数据ts相差超过1个interval
         rate22 = {'symbol': 'EURUSD', 'interval': '1h', 'ts': 1641398401, 'price_open': 2.250, 'price_high': 2.580,
                   'price_low': 2.490, 'price_closed': 2.560}
         symbol_rates_list = [rate1, rate22]
@@ -103,6 +108,24 @@ class TestFunctions(unittest.TestCase):
         result, data = gen_combinations_price.calc_combo_price(symbol_rates_list, combination, 'strict_match')
         self.assertFalse(result)
         self.assertIsNone(data)
+
+        # 给的rates数据ts相差小于1个interval
+        rate22 = {'symbol': 'EURUSD', 'interval': '1h', 'ts': 1641394890, 'price_open': 2.250, 'price_high': 2.580,
+                  'price_low': 2.490, 'price_closed': 2.560}
+        symbol_rates_list = [rate1, rate22]
+        combination = Combination(id=1, name='XAUUSD_EURUSD_strict_match', symbol_list='1,4')
+        result, data = gen_combinations_price.calc_combo_price(symbol_rates_list, combination, 'strict_match')
+        self.assertTrue(result)
+        print(data['combination_price'])
+        # 计算组合价: 计算组合价格=∑[(symbol价格/symbol 3point_price)*3]  先*3再求和
+        self.assertEqual(rate1['price_open'] / rate1_trio_price * 3 + rate2['price_open'] / rate2_trio_price * 3,
+                         data['combination_price'][2])
+        self.assertEqual(rate1['price_high'] / rate1_trio_price * 3 + rate2['price_high'] / rate2_trio_price * 3,
+                         data['combination_price'][3])
+        self.assertEqual(rate1['price_low'] / rate1_trio_price * 3 + rate2['price_low'] / rate2_trio_price * 3,
+                         data['combination_price'][4])
+        self.assertEqual(rate1['price_closed'] / rate1_trio_price * 3 + rate2['price_closed'] / rate2_trio_price * 3,
+                         data['combination_price'][5])
 
 
 if __name__ == '__main__':

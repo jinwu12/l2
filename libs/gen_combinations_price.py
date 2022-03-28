@@ -127,8 +127,11 @@ def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
     trio_point_price_map = {}  # 3点价格
     # 判断symbol_rates_list是否包含组合要求的所有symbol的数据
     for symbol_id in combination.symbol_list.split(','):
-        symbol = Symbol.get_by_id(symbol_id)
-        if symbol.trio_point_price is None:
+        symbol = global_cache.get_symbol_by_id(int(symbol_id))
+        if symbol is None:
+            logger.error("不存在对应id的symbol：id=%s", symbol_id)
+            return False, None
+        elif symbol.trio_point_price is None:
             logger.error("缺少3点价格数据：symbol=%s", symbol.name)
             return False, None
         symbol_value = symbol.symbol_value
@@ -181,7 +184,7 @@ def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
     most_common_ts = ts_counter.most_common(1)[0][0]
     # TODO 返回结果根据调用情况再考虑一下
     data = {
-        'combination_id': combination.id, 'combined_method': 'strict_match',
+        'combination_id': combination.id, 'combined_method': mode,
         'symbol_3point_price': trio_point_price_map,
         'combination_3point_price': calculate_combination_3point_price(combination),
         'interval': first_interval,
