@@ -49,22 +49,3 @@ def timestamp_to_datetime_str(timestamp, timezone, format='%Y-%m-%d %H:%M:%S%z')
 def datetime_str_with_timezone_to_timestamp(time):
     return datetime.strptime(time, '%Y-%m-%d %H:%M:%S%z').timestamp()
 
-
-# 根据配置文件中的db配置，连接数据库
-def db_connect():
-    # 读取配置文件中的数据配置
-    cfg = ConfigParser()
-    cfg.read('./config.ini')
-    db_host = cfg.get('database','host')
-    db_user = cfg.get('database','user')
-    db_passwords = cfg.get('database','passwords')
-    port = cfg.get('database', 'port')
-    
-    #连接数据库
-    mydb = mysql.connector.connect(
-            host = db_host,
-            user = db_user,
-            passwd = db_passwords,
-            port = port
-            )
-    return mydb
