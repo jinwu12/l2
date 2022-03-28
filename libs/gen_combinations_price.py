@@ -122,7 +122,7 @@ def get_historical_symbol_rates_list(start, end, interval):
     return result
 
 
-def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
+def calc_combo_price(symbol_rates_list, combination):
     """
     计算组合价格
     :param symbol_rates_list: 同一个时间戳的不同symbol的dict报价列表
@@ -131,10 +131,10 @@ def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
     :return:
     """
     modes = ['strict_match', 'best_effort_match']
-    if mode not in modes:
-        logger.error("目前只支持%s，暂时不支持%s", modes, mode)
+    if combination.combined_method not in modes:
+        logger.error("目前只支持%s，暂时不支持%s", modes, combination.combined_method)
         return False, None
-    if mode == modes[0]:
+    if combination.combined_method == modes[0]:
         return calc_combo_price_strict_match(symbol_rates_list, combination)
     else:
         return calc_combo_price_best_effort_match(symbol_rates_list, combination)
