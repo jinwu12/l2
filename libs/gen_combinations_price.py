@@ -127,7 +127,6 @@ def calc_combo_price(symbol_rates_list, combination):
     计算组合价格
     :param symbol_rates_list: 同一个时间戳的不同symbol的dict报价列表
     :param combination: 组合数据对象
-    :param mode: strict_match或者best_effort，strict_match参考：https://trello.com/c/oI5VMqx8，best_effort参考：https://trello.com/c/rZybjVKC
     :return:
     """
     modes = ['strict_match', 'best_effort_match']
