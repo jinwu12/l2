@@ -3,6 +3,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import time
 import datetime
 from libs import commons
+from libs.database import *
 import yfinance as yf
 from decimal import Decimal
 import pandas as pd
@@ -12,18 +13,21 @@ import pandas as pd
 scheduler = BackgroundScheduler(timezone='Asia/Shanghai')
 
 # 专门for yfinance数据源的二次检查和补录
+
+
 def check_yfinance_and_reupdate(interval, symbol='^TNX'):
     miss_logger = commons.create_logger('missing_ts')
     diff_logger = commons.create_logger('same_ts_diff_price')
     # 拉取接口的历史数据
     end = datetime.datetime.now() + datetime.timedelta(days=1)
     start = (datetime.datetime.now() - datetime.timedelta(days=6))
-    o_data = yf.download(start=start, end=end, interval=interval, tickers=symbol)
+    o_data = yf.download(start=start, end=end,
+                         interval=interval, tickers=symbol)
     # 逐行对比数据，记录差异
     df = pd.DataFrame(o_data)
     result_list = []
-    db = commons.db_connect()
-    mycursor = db.cursor()
+    # 初始化db连接指针
+    tnx_tbl = database.get_model_table_by_symbol_value('^TNX')
     diff_count = 0
     # 遍历dataframe中的每一行
     for pd_timestamp, row in df.iterrows():
@@ -39,11 +43,11 @@ def check_yfinance_and_reupdate(interval, symbol='^TNX'):
        close_price = Decimal(row['Adj Close']).quantize(
            Decimal("0.0001"), rounding="ROUND_HALF_UP")
        # 逐条对比db中的数据,找出数据有差异的点
-       sql = "select * from original_data_source.tnx where `interval`='" + interval + "' and symbol_name ='" \
+       sql = "select * from original_data_source." + tnx_tbl + " where `interval`='" + interval + "' and symbol_name ='" \
            + symbol + "' and ts = " + str(ts) + " and ( price_open != " + str(open_price) + " or price_high != " + str(high_price) + \
            " or price_low != " + str(low_price) + \
            " or price_closed != " + str(close_price) + ")"
-       mycursor.execute(sql)
+       mycursor = data_source_db.execute_sql(sql)
        result = mycursor.fetchall()
        if len(result) > 0:
            diff_logger.error("数据不一致:%s", dict(symbol=symbol, interval=interval, ts=ts,
@@ -54,6 +58,8 @@ def check_yfinance_and_reupdate(interval, symbol='^TNX'):
         weekly_date_reupdate(interval)
 
 # 每周第一次补录函数
+
+
 def weekly_date_reupdate(interval):
     end = datetime.datetime.now() + datetime.timedelta(days=1)
     start = (datetime.datetime.now() - datetime.timedelta(days=6))
@@ -86,7 +92,6 @@ scheduler.add_job(
     misfire_grace_time=60,
     coalesce=True
 )
-
 
 
 # 分钟级数据补录
