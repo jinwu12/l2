@@ -59,6 +59,8 @@ class TestFunctions(unittest.TestCase):
                  'price_low': 1.6470, 'price_closed': 1.6530}
         rate2 = {'symbol': 'EURUSD', 'interval': '1h', 'ts': 1641394800, 'price_open': 2.250, 'price_high': 2.580,
                  'price_low': 2.490, 'price_closed': 2.560}
+        ############ strict_match #############
+        # 正常计算
         symbol_rates_list = [rate1, rate2]
         combination = Combination(id=1, name='XAUUSD_EURUSD_strict_match', symbol_list='1,4')
         # 假定XAUUSD和EURUSD的3点价都为5
@@ -76,6 +78,31 @@ class TestFunctions(unittest.TestCase):
                          data['combination_price'][4])
         self.assertEqual(rate1['price_closed'] / rate1_trio_price * 3 + rate2['price_closed'] / rate2_trio_price * 3,
                          data['combination_price'][5])
+
+        # 给的rates数据缺一个
+        symbol_rates_list = [rate1]
+        combination = Combination(id=1, name='XAUUSD_EURUSD_strict_match', symbol_list='1,4')
+        result, data = gen_combinations_price.calc_combo_price(symbol_rates_list, combination, 'strict_match')
+        self.assertFalse(result)
+        self.assertIsNone(data)
+
+        # 给的rates数据不是同一个interval的
+        rate22 = {'symbol': 'EURUSD', 'interval': '1m', 'ts': 1641394800, 'price_open': 2.250, 'price_high': 2.580,
+                  'price_low': 2.490, 'price_closed': 2.560}
+        symbol_rates_list = [rate1, rate22]
+        combination = Combination(id=1, name='XAUUSD_EURUSD_strict_match', symbol_list='1,4')
+        result, data = gen_combinations_price.calc_combo_price(symbol_rates_list, combination, 'strict_match')
+        self.assertFalse(result)
+        self.assertIsNone(data)
+
+        # 给的rates数据ts相关超过1个interval
+        rate22 = {'symbol': 'EURUSD', 'interval': '1h', 'ts': 1641398401, 'price_open': 2.250, 'price_high': 2.580,
+                  'price_low': 2.490, 'price_closed': 2.560}
+        symbol_rates_list = [rate1, rate22]
+        combination = Combination(id=1, name='XAUUSD_EURUSD_strict_match', symbol_list='1,4')
+        result, data = gen_combinations_price.calc_combo_price(symbol_rates_list, combination, 'strict_match')
+        self.assertFalse(result)
+        self.assertIsNone(data)
 
     if __name__ == '__main__':
         unittest.main()
