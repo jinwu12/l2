@@ -130,7 +130,7 @@ def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
     :param mode: strict_match或者best_effort，strict_match参考：https://trello.com/c/oI5VMqx8，best_effort参考：https://trello.com/c/rZybjVKC
     :return:
     """
-    modes = ['strict_match', 'best_effort']
+    modes = ['strict_match', 'best_effort_match']
     if mode not in modes:
         logger.error("目前只支持%s，暂时不支持%s", modes, mode)
         return False, None
@@ -305,7 +305,7 @@ def calc_combo_price_best_effort_match(symbol_rates_list, combination):
 
     # TODO 返回结果根据调用情况再考虑一下
     data = {
-        'combination_id': combination.id, 'combined_method': 'best_effort',
+        'combination_id': combination.id, 'combined_method': 'best_effort_match',
         'symbol_3point_price': trio_point_price_map,
         'combination_3point_price': calculate_combination_3point_price(combination),
         'interval': first_interval,

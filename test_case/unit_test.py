@@ -139,7 +139,7 @@ class TestFunctions(unittest.TestCase):
         # 正常计算
         symbol_rates_list = [rate1, rate2]
         combination = Combination(id=1, name='XAUUSD_EURUSD_best_effort', symbol_list='1,4')
-        mode = 'best_effort'
+        mode = 'best_effort_match'
         result, data = gen_combinations_price.calc_combo_price_best_effort_match(symbol_rates_list, combination)
         self.assertTrue(result)
         self.assertEqual(mode, data['combined_method'])
