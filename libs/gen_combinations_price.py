@@ -280,6 +280,11 @@ def cal_comb_price_strict_match(symbol_rates_list, combination_id):
     return True, data
 
 
+# best_effort_match模式计算组合价，https://trello.com/c/rZybjVKC
+def cal_comb_price_best_effort_match(symbol_rates_list, combination_id, db):
+    pass
+
+
 # 从db中拉取特定symbol到指定时间戳之前的最新报价
 def get_lastest_price_before_dst_ts(db, interval, symbol, dst_ts):
     tbl = get_model_table_by_symbol(symbol)
