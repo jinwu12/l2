@@ -104,5 +104,6 @@ class TestFunctions(unittest.TestCase):
         self.assertFalse(result)
         self.assertIsNone(data)
 
-    if __name__ == '__main__':
-        unittest.main()
+
+if __name__ == '__main__':
+    unittest.main()
