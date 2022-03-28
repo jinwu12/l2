@@ -49,3 +49,7 @@ def timestamp_to_datetime_str(timestamp, timezone, format='%Y-%m-%d %H:%M:%S%z')
 def datetime_str_with_timezone_to_timestamp(time):
     return datetime.strptime(time, '%Y-%m-%d %H:%M:%S%z').timestamp()
 
+
+def check_and_fix_timestamp(timestamp, interval='1m'):
+    """检查并修正时间戳(比如，interval是1分钟，然后时间戳却不是整分)，向下取整"""
+    return timestamp - timestamp % dict({'1m': 60, '1h': 60 * 60})[interval]
