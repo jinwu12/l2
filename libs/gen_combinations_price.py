@@ -128,7 +128,10 @@ def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
     # 判断symbol_rates_list是否包含组合要求的所有symbol的数据
     for symbol_id in combination.symbol_list.split(','):
         symbol = global_cache.get_symbol_by_id(int(symbol_id))
-        if symbol.trio_point_price is None:
+        if symbol is None:
+            logger.error("不存在对应id的symbol：id=%s", symbol_id)
+            return False, None
+        elif symbol.trio_point_price is None:
             logger.error("缺少3点价格数据：symbol=%s", symbol.name)
             return False, None
         symbol_value = symbol.symbol_value
