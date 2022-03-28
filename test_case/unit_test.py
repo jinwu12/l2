@@ -110,7 +110,6 @@ class TestFunctions(unittest.TestCase):
         symbol_rates_list = [rate1, rate22]
         combination = Combination(id=1, name='XAUUSD_EURUSD_strict_match', symbol_list='1,4')
         result, data = gen_combinations_price.calc_combo_price(symbol_rates_list, combination, 'strict_match')
-        result, data = gen_combinations_price.calc_combo_price(symbol_rates_list, combination, 'strict_match')
         self.assertTrue(result)
         print(data['combination_price'])
         # 计算组合价: 计算组合价格=∑[(symbol价格/symbol 3point_price)*3]  先*3再求和
