@@ -26,7 +26,7 @@ def check_yfinance_and_reupdate(interval, symbol='^TNX'):
     # 逐行对比数据，记录差异
     df = pd.DataFrame(o_data)
     result_list = []
-    # 初始化db连接指针
+    # 获取symbol对应表名 
     tnx_tbl = database.get_model_table_by_symbol_value('^TNX')
     diff_count = 0
     # 遍历dataframe中的每一行
