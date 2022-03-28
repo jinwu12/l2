@@ -315,6 +315,26 @@ production_combined_data_db = MySQLDatabase(
 
 
 ###############################################
+
+# 缓存
+class Cache:
+
+    symbol_map = {}
+
+    def __init__(self):
+        self.reload()
+
+    # TODO 外部改了全局配置数据需要手工调用这个方法
+    def reload(self):
+        for symbol in Symbol.select():
+            self.symbol_map[symbol.id] = symbol
+
+    def get_symbol_by_id(self, symbol_id):
+        return self.symbol_map[symbol_id]
+
+
+global_cache = Cache()
+
 # 通用批量保存，保存对象以字典列表形式传入
 def batch_save_by_model(symbol_model, dict_data_list, batch_size=500):
     while len(dict_data_list) > batch_size:
