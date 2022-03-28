@@ -76,7 +76,7 @@ def get_historical_symbol_rates_list(start, end, interval):
     for symbol in symbols:
         # print(symbol)
         try:
-            tbl = get_model_table_by_symbol(symbol.symbol_value)
+            tbl = get_model_table_by_symbol_value(symbol.symbol_value)
             # print(tbl)
             sql = "select '%s', ts, price_open, price_high, price_low, price_closed from original_data_source.%s " \
                   "where ts between %d and %d order by ts" % (
@@ -122,7 +122,31 @@ def get_historical_symbol_rates_list(start, end, interval):
     return result
 
 
-def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
+def calc_combo_price(symbol_rates_list, combination):
+    """
+    计算组合价格
+    :param symbol_rates_list: 同一个时间戳的不同symbol的dict报价列表
+    :param combination: 组合数据对象
+    :return:
+    """
+    modes = ['strict_match', 'best_effort_match']
+    if combination.combined_method not in modes:
+        logger.error("目前只支持%s，暂时不支持%s", modes, combination.combined_method)
+        return False, None
+    if combination.combined_method == modes[0]:
+        return calc_combo_price_strict_match(symbol_rates_list, combination)
+    else:
+        return calc_combo_price_best_effort_match(symbol_rates_list, combination)
+
+
+# strict_match模式计算组合价，https://trello.com/c/oI5VMqx8
+def calc_combo_price_strict_match(symbol_rates_list, combination):
+    """
+        使用strict_match模式计算组合价格
+        :param symbol_rates_list: 同一个时间戳的不同symbol的dict报价列表
+        :param combination: 组合数据对象
+        :return:
+    """
     valid_rates_list = []  # 最终用来计算的数据
     trio_point_price_map = {}  # 3点价格
     # 判断symbol_rates_list是否包含组合要求的所有symbol的数据
@@ -143,7 +167,7 @@ def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
                 found = True
                 break
         if not found:
-            logger.error("计算组合价格时缺少对应symbol数据：combo_id=%d, symbol_list=%s, 缺少%s", combination.id,
+            logger.error("计算组合价格时缺少对应symbol数据：combo_id=%s, symbol_list=%s, 缺少%s", combination.id,
                          combination.symbol_list, symbol_value)
             return False, None
     first_rate = valid_rates_list[0]
@@ -172,19 +196,19 @@ def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
     closed_combo_price = 0
     ts_list = []
     for item in valid_rates_list:
-        symbol_name = item['symbol']
+        symbol_value = item['symbol']
         ts_list.append(item['ts'])
         # 计算 价格/3点价*3
-        open_combo_price += item['price_open'] / trio_point_price_map[symbol_name] * 3
-        high_combo_price += item['price_high'] / trio_point_price_map[symbol_name] * 3
-        low_combo_price += item['price_low'] / trio_point_price_map[symbol_name] * 3
-        closed_combo_price += item['price_closed'] / trio_point_price_map[symbol_name] * 3
+        open_combo_price += item['price_open'] / trio_point_price_map[symbol_value] * 3
+        high_combo_price += item['price_high'] / trio_point_price_map[symbol_value] * 3
+        low_combo_price += item['price_low'] / trio_point_price_map[symbol_value] * 3
+        closed_combo_price += item['price_closed'] / trio_point_price_map[symbol_value] * 3
     # 出现次数最多的ts
     ts_counter = Counter(ts_list)
     most_common_ts = ts_counter.most_common(1)[0][0]
     # TODO 返回结果根据调用情况再考虑一下
     data = {
-        'combination_id': combination.id, 'combined_method': mode,
+        'combination_id': combination.id, 'combined_method': 'strict_match',
         'symbol_3point_price': trio_point_price_map,
         'combination_3point_price': calculate_combination_3point_price(combination),
         'interval': first_interval,
@@ -194,107 +218,110 @@ def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
     return True, data
 
 
-# 使用strict_match方式来使用传入的symbol_rates_list和combination生成组合价格
-# https://trello.com/c/oI5VMqx8
-def cal_comb_price_strict_match(symbol_rates_list, combination_id):
-    combination = Combination.get_by_id(combination_id)
-    symbols = Symbol.select().where(Symbol.id.in_(combination.symbol_list.split(",")))
+# best_effort_match模式计算组合价，https://trello.com/c/rZybjVKC
+def calc_combo_price_best_effort_match(symbol_rates_list, combination):
+    """
+           使用best_effort模式计算组合价格
+           :param symbol_rates_list: 同一个时间戳的不同symbol的dict报价列表
+           :param combination: 组合数据对象
+           :return:
+       """
+    candidate_rates_list = []  # 候选数据(属于组合中的成员symbol报价)
+    lack_symbols = []  # best_effort模式下，缺数据需要取临近数据补的symbol value列表
     trio_point_price_map = {}  # 3点价格
-    for symbol in symbols:
-        print(model_to_dict(symbol))
-        if symbol.trio_point_price is None:
+    valid_ts_list = []  # 有效数据的ts列表，用来取出现最多的ts
+    # 判断symbol_rates_list是否包含组合要求的所有symbol的数据
+    for symbol_id in combination.symbol_list.split(','):
+        symbol = global_cache.get_symbol_by_id(int(symbol_id))
+        if symbol is None:
+            logger.error("不存在对应id的symbol：id=%s", symbol_id)
+            return False, None
+        elif symbol.trio_point_price is None:
             logger.error("缺少3点价格数据：symbol=%s", symbol.name)
             return False, None
-        trio_point_price_map[symbol] = symbol.trio_point_price
-
-    open_price_map = {}
-    high_price_map = {}
-    low_price_map = {}
-    closed_price_map = {}
-    interval = 60 * 60  # 默认1小时
-    # 检查对应组合中的symbol是否都有报价，并记录最小和最大的时间戳
-    min_ts = -1  # 最小的时间戳
-    max_ts = -1  # 最大的时间戳
-    ts_list = []
-    for symbol in symbols:
-        # print("check=>", symbol.name)
-        symbol_name = symbol.name
-        # 同symbol的，取最前的一条报价
-        find = False
-        for sub_list in symbol_rates_list:
-            for item in sub_list:
-                if item['symbol'] == symbol_name:
-                    # print(item)
-                    find = True
-                    # 计算 价格/3点价*3
-                    open_price_map[symbol_name] = Decimal.from_float(item['value'][2]) / trio_point_price_map[
-                        symbol_name] * 3
-                    high_price_map[symbol_name] = Decimal.from_float(item['value'][3]) / trio_point_price_map[
-                        symbol_name] * 3
-                    low_price_map[symbol_name] = Decimal.from_float(item['value'][4]) / trio_point_price_map[
-                        symbol_name] * 3
-                    closed_price_map[symbol_name] = Decimal.from_float(item['value'][5]) / trio_point_price_map[
-                        symbol_name] * 3
-                    if item['interval'] == '1m':
-                        interval = 60
-                    ts = item['value'][1]
-                    ts_list.append(ts)
-                    if min_ts == -1 or ts < min_ts:
-                        min_ts = ts
-                    if max_ts == -1 or ts > max_ts:
-                        max_ts = ts
-                    break
-            if find:
-                # print("----------")
+        symbol_value = symbol.symbol_value
+        trio_point_price_map[symbol_value] = float(symbol.trio_point_price)
+        found = False
+        for rate in symbol_rates_list:
+            if rate['symbol'] == symbol_value:
+                candidate_rates_list.append(rate)
+                valid_ts_list.append(rate['ts'])
+                found = True
                 break
-        if not find:
-            logger.error("symbol报价缺失：%s", symbol_name)
-            return False, None
-    # 比较各symbol报价的时差
-    diff = max_ts - min_ts
-    if diff > interval:
-        logger.error("多个symbol报价时差过大：%d > %d", diff, interval)
+        if not found:
+            lack_symbols.append(symbol.symbol_value)
+    if len(candidate_rates_list) == 0:
+        logger.error("best_effort模式下没有有效的候选数据：combination=%, symbol_rates_list=%s", combination, symbol_rates_list)
         return False, None
-    # 计算组合价格=∑[(symbol价格/symbol 3point_price)*3]  先*3再求和
-    # symbol价格取price_closed，3点价格从Tbl_symbol_method取
+    # 出现次数最多的ts
+    ts_counter = Counter(valid_ts_list)
+    most_common_ts = ts_counter.most_common(1)[0][0]
+    first_rate = candidate_rates_list[0]
+    first_interval = first_rate['interval']
+    if len(lack_symbols) > 0:
+        for symbol_value in lack_symbols:
+            rate = get_lastest_price_before_dst_ts(symbol_value, first_interval, most_common_ts)
+            if rate:
+                candidate_rates_list.append(rate)
+            else:
+                logger.error("计算组合价格时缺少对应symbol数据(ts<=%d)：combo_id=%s, symbol_list=%s, 缺少%s", most_common_ts,
+                             lack_symbols,
+                             combination.symbol_list, symbol_value)
+                return False, None
+
+    valid_rates_list = []
+
+    max_gap = 60 if first_interval == '1m' else 60 * 60  # 1个interval的时间间隔
+    # 评估评估候选数据的时间差，看是否需要另拉数据
+    for rate in candidate_rates_list:
+        if rate['interval'] != first_interval:
+            logger.error("提供的数据interval不一致：%s", candidate_rates_list)
+            return False, None
+        elif abs(most_common_ts - rate['ts']) > max_gap and rate['symbol'] not in lack_symbols:  # 重拉数据
+            rate = get_lastest_price_before_dst_ts(rate['symbol'], first_interval, most_common_ts)
+            if rate:
+                valid_rates_list.append(rate)
+            else:
+                logger.error("计算组合价格时缺少对应symbol数据(ts<=%d)：combo_id=%s, symbol_list=%s, 缺少%s", most_common_ts,
+                             rate['symbol'], combination.symbol_list, symbol_value)
+                return False, None
+        else:
+            valid_rates_list.append(rate)
+
+    # 计算组合价: 计算组合价格=∑[(symbol价格/symbol 3point_price)*3]  先*3再求和
     open_combo_price = 0
     high_combo_price = 0
     low_combo_price = 0
     closed_combo_price = 0
-    for price in open_price_map.values():
-        open_combo_price += price
-    for price in high_price_map.values():
-        high_combo_price += price
-    for price in low_price_map.values():
-        low_combo_price += price
-    for price in closed_price_map.values():
-        closed_combo_price += price
-    ts_counter = Counter(ts_list)
-    most_common_ts = ts_counter.most_common(1)[0][0]
-    # print(ts_list, ts_counter.most_common(1), ts_counter.most_common(1)[0][0])
+    for item in valid_rates_list:
+        symbol_value = item['symbol']
+
+        # 计算 价格/3点价*3
+        open_combo_price += item['price_open'] / trio_point_price_map[symbol_value] * 3
+        high_combo_price += item['price_high'] / trio_point_price_map[symbol_value] * 3
+        low_combo_price += item['price_low'] / trio_point_price_map[symbol_value] * 3
+        closed_combo_price += item['price_closed'] / trio_point_price_map[symbol_value] * 3
+
+    # TODO 返回结果根据调用情况再考虑一下
     data = {
-        'combination_id': combination_id, 'combined_method': 'strict_match',
+        'combination_id': combination.id, 'combined_method': 'best_effort_match',
         'symbol_3point_price': trio_point_price_map,
         'combination_3point_price': calculate_combination_3point_price(combination),
-        'interval': '1m' if interval == 60 else '1h',
+        'interval': first_interval,
         'combination_price': [combination.name, most_common_ts, open_combo_price, high_combo_price,
                               low_combo_price, closed_combo_price]
     }
     return True, data
 
 
-# best_effort_match模式计算组合价，https://trello.com/c/rZybjVKC
-def cal_comb_price_best_effort_match(symbol_rates_list, combination_id, db):
-    pass
-
-
-# 从db中拉取特定symbol到指定时间戳之前的最新报价
-def get_lastest_price_before_dst_ts(db, interval, symbol, dst_ts):
-    tbl = get_model_table_by_symbol(symbol)
-    sql = "select symbol_name, ts, price_open, price_high, price_low, price_closed " \
+# 从db中拉取特定symbol到指定时间戳之前(包含当前)的最新报价
+def get_lastest_price_before_dst_ts(symbol_value, interval, dst_ts):
+    tbl = get_model_table_by_symbol_value(symbol_value)
+    sql = "select symbol_name as symbol, `interval`, ts, price_open, price_high, price_low, price_closed " \
           "from original_data_source.%s where `interval`='%s' and ts<=%d order by ts desc limit 1" % (
               tbl, interval, dst_ts)
-    cursor = db.cursor()
-    cursor.execute(sql)
+    cursor = data_source_db.execute_sql(sql)
     result = cursor.fetchone()
-    return result
+    if result:
+        column_names = [x[0] for x in cursor.description]
+        return dict(zip(column_names, result))  # 封装成dicts返回

@@ -366,8 +366,8 @@ def get_model_by_symbol(symbol):
             return sc
 
 
-# 根据symbol获取对应的模型表名
-def get_model_table_by_symbol(symbol):
+# 根据symbol value获取对应的模型表名
+def get_model_table_by_symbol_value(symbol):
     for sc in BaseSymbolPrice.__subclasses__():
         if symbol == getattr(sc, "getSymbol")():
             return sc._meta.table_name
