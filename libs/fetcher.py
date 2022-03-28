@@ -45,10 +45,10 @@ def get_historical_data_from_yfinance(symbol, interval, start, end, period=''):
         # 将第一列时间转timestamp
         ts = int(pd_timestamp.to_pydatetime().timestamp())
         # 获取开盘价、最高价、最低价和调整后的收盘价;价格取小数点后4位
-        open_price = str(Decimal(row['Open']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
-        high_price = str(Decimal(row['High']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
-        low_price = str(Decimal(row['Low']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
-        close_price = str(Decimal(row['Adj Close']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
+        open_price = float(Decimal(row['Open']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
+        high_price = float(Decimal(row['High']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
+        low_price = float(Decimal(row['Low']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
+        close_price = float(Decimal(row['Adj Close']).quantize(Decimal("0.0001"), rounding="ROUND_HALF_UP"))
         # 将该列列表附加到结果列表中进行嵌套
         result_list.append(dict(symbol=symbol, interval=interval, ts=ts,
                                 price_open=open_price, price_high=high_price,

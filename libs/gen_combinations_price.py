@@ -1,15 +1,12 @@
 import datetime
 import traceback
+from collections import defaultdict, Counter
 from decimal import *
+
+from dateutil.relativedelta import relativedelta
 from playhouse.shortcuts import model_to_dict
 
-import pytz
-from dateutil.relativedelta import relativedelta
-
-from libs import commons
 from libs.database import *
-
-from collections import defaultdict, Counter
 
 logger = commons.create_logger()
 
@@ -125,6 +122,75 @@ def get_historical_symbol_rates_list(start, end, interval):
     return result
 
 
+def calc_combo_price(symbol_rates_list, combination, mode='strict_match'):
+    valid_rates_list = []  # 最终用来计算的数据
+    trio_point_price_map = {}  # 3点价格
+    # 判断symbol_rates_list是否包含组合要求的所有symbol的数据
+    for symbol_id in combination.symbol_list.split(','):
+        symbol = Symbol.get_by_id(symbol_id)
+        if symbol.trio_point_price is None:
+            logger.error("缺少3点价格数据：symbol=%s", symbol.name)
+            return False, None
+        symbol_value = symbol.symbol_value
+        trio_point_price_map[symbol_value] = float(symbol.trio_point_price)
+        found = False
+        for rate in symbol_rates_list:
+            if rate['symbol'] == symbol_value:
+                valid_rates_list.append(rate)
+                found = True
+                break
+        if not found:
+            logger.error("计算组合价格时缺少对应symbol数据：combo_id=%d, symbol_list=%s, 缺少%s", combination.id,
+                         combination.symbol_list, symbol_value)
+            return False, None
+    first_rate = valid_rates_list[0]
+    first_ts = first_rate['ts']
+    first_interval = first_rate['interval']
+    max_gap = 60 if first_interval == '1m' else 60 * 60  # 1个interval的时间间隔
+    min_ts = first_ts
+    max_ts = first_ts
+    for item in valid_rates_list[1:]:
+        if item['interval'] != first_interval:
+            logger.error("提供的数据interval不一致：%s", valid_rates_list)
+            return False, None
+        ts = item['ts']
+        if first_ts != ts:
+            min_ts = min_ts if min_ts <= ts else ts
+            max_ts = max_ts if max_ts >= ts else ts
+    # 判断所有时间戳是否一致
+    gap = max_ts - min_ts
+    if gap > max_gap:
+        logger.error("提供的数据时差超过1个interval：%s", valid_rates_list)
+        return False, None
+    # 计算组合价: 计算组合价格=∑[(symbol价格/symbol 3point_price)*3]  先*3再求和
+    open_combo_price = 0
+    high_combo_price = 0
+    low_combo_price = 0
+    closed_combo_price = 0
+    ts_list = []
+    for item in valid_rates_list:
+        symbol_name = item['symbol']
+        ts_list.append(item['ts'])
+        # 计算 价格/3点价*3
+        open_combo_price += item['price_open'] / trio_point_price_map[symbol_name] * 3
+        high_combo_price += item['price_high'] / trio_point_price_map[symbol_name] * 3
+        low_combo_price += item['price_low'] / trio_point_price_map[symbol_name] * 3
+        closed_combo_price += item['price_closed'] / trio_point_price_map[symbol_name] * 3
+    # 出现次数最多的ts
+    ts_counter = Counter(ts_list)
+    most_common_ts = ts_counter.most_common(1)[0][0]
+    # TODO 返回结果根据调用情况再考虑一下
+    data = {
+        'combination_id': combination.id, 'combined_method': 'strict_match',
+        'symbol_3point_price': trio_point_price_map,
+        'combination_3point_price': calculate_combination_3point_price(combination),
+        'interval': first_interval,
+        'combination_price': [combination.name, most_common_ts, open_combo_price, high_combo_price,
+                              low_combo_price, closed_combo_price]
+    }
+    return True, data
+
+
 # 使用strict_match方式来使用传入的symbol_rates_list和combination生成组合价格
 # https://trello.com/c/oI5VMqx8
 def cal_comb_price_strict_match(symbol_rates_list, combination_id):
@@ -158,10 +224,14 @@ def cal_comb_price_strict_match(symbol_rates_list, combination_id):
                     # print(item)
                     find = True
                     # 计算 价格/3点价*3
-                    open_price_map[symbol_name] = Decimal.from_float(item['value'][2]) / trio_point_price_map[symbol_name] * 3
-                    high_price_map[symbol_name] = Decimal.from_float(item['value'][3]) / trio_point_price_map[symbol_name] * 3
-                    low_price_map[symbol_name] = Decimal.from_float(item['value'][4]) / trio_point_price_map[symbol_name] * 3
-                    closed_price_map[symbol_name] = Decimal.from_float(item['value'][5]) / trio_point_price_map[symbol_name] * 3
+                    open_price_map[symbol_name] = Decimal.from_float(item['value'][2]) / trio_point_price_map[
+                        symbol_name] * 3
+                    high_price_map[symbol_name] = Decimal.from_float(item['value'][3]) / trio_point_price_map[
+                        symbol_name] * 3
+                    low_price_map[symbol_name] = Decimal.from_float(item['value'][4]) / trio_point_price_map[
+                        symbol_name] * 3
+                    closed_price_map[symbol_name] = Decimal.from_float(item['value'][5]) / trio_point_price_map[
+                        symbol_name] * 3
                     if item['interval'] == '1m':
                         interval = 60
                     ts = item['value'][1]
@@ -208,6 +278,11 @@ def cal_comb_price_strict_match(symbol_rates_list, combination_id):
                               low_combo_price, closed_combo_price]
     }
     return True, data
+
+
+# best_effort_match模式计算组合价，https://trello.com/c/rZybjVKC
+def cal_comb_price_best_effort_match(symbol_rates_list, combination_id, db):
+    pass
 
 
 # 从db中拉取特定symbol到指定时间戳之前的最新报价

@@ -28,7 +28,7 @@ class SignalType(Model):
     # 信号方向
     direction = CharField(column_name='direction', max_length=8, null=False)
     # 备注
-    commments = TextField(column_name='comments')
+    comments = TextField(column_name='comments')
 
     # 存放在Global_Config库中
     class Meta:
