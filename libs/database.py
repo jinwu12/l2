@@ -51,7 +51,7 @@ class PivotReport(Model):
     timezone = CharField(column_name='timezone', max_length=16, null=False)
     # 组合方法，行情记录表对应的combination下的combined_method
     combined_method = CharField(
-        column_name='combined_method',  max_length=16, null=False
+        column_name='combined_method', max_length=16, null=False
     )
     # 开始记录时间，默认值应为combination最早有记录的时间, 以utc0时区的时间戳存储
     start_date = BigIntegerField(column_name='start_date', null=False)
@@ -139,7 +139,7 @@ production_signal_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-    )
+)
 
 
 class Signal(Model):
@@ -173,7 +173,8 @@ production_pivot_report_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-    )
+)
+
 
 # 行情记录表的每日记录类
 
@@ -216,7 +217,7 @@ data_source_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-    )
+)
 
 
 # symbol行情数据基类
@@ -303,6 +304,12 @@ class UsdSek(BaseSymbolPrice):
         return "USDSEK"
 
 
+class CombinedSymbol(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(cls):
+        return "COMBINED"
+
+
 ###############################################
 # 组合价格数据存放在production_combined_data库中
 production_combined_data_db = MySQLDatabase(
@@ -311,14 +318,13 @@ production_combined_data_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-    )
+)
 
 
 ###############################################
 
 # 缓存
 class Cache:
-
     symbol_map = {}
 
     def __init__(self):
@@ -332,8 +338,12 @@ class Cache:
     def get_symbol_by_id(self, symbol_id):
         return self.symbol_map[symbol_id]
 
+    def get_table_name_by_symbol_id(self, symbol_id):
+        return get_model_table_by_symbol_value(self.symbol_map[symbol_id].symbol_value)
+
 
 global_cache = Cache()
+
 
 # 通用批量保存，保存对象以字典列表形式传入
 def batch_save_by_model(symbol_model, dict_data_list, batch_size=500):
