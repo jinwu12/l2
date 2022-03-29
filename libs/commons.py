@@ -4,6 +4,7 @@ import logging.config
 import mysql.connector
 from configparser import ConfigParser
 from datetime import datetime
+import os
 
 import pytz
 
@@ -20,7 +21,7 @@ def create_logger(name='app'):
         logger.setLevel(logging.INFO)
         log_map[name] = logger
         # 输出到日志文件,按天分文件，保存30天
-        handler = logging.handlers.TimedRotatingFileHandler('logs/' + name + '.log', 'D', 1, 30)
+        handler = logging.handlers.TimedRotatingFileHandler('logs/' + name + '.' + str(os.getpid()) + '.log', 'D', 1, 30)
         handler.suffix = "%Y-%m-%d.log"
         handler.setLevel(logging.INFO)
         handler.setFormatter(logging.Formatter(LOG_FORMAT))
