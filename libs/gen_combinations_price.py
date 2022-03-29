@@ -179,9 +179,9 @@ def calc_combo_price_strict_match(symbol_rates_list, combination):
     # 出现次数最多的ts
     ts_counter = Counter(ts_list)
     most_common_ts = ts_counter.most_common(1)[0][0]
-    result = CombinedSymbol(symbol=generate_combination_name(combination), ts=most_common_ts, interval=first_interval,
-                            price_open=open_combo_price,
-                            price_high=high_combo_price, price_low=low_combo_price, price_closed=closed_combo_price)
+    result = dict(symbol=generate_combination_name(combination), ts=most_common_ts, interval=first_interval,
+                  price_open=open_combo_price,
+                  price_high=high_combo_price, price_low=low_combo_price, price_closed=closed_combo_price)
     return result
 
 
@@ -269,9 +269,9 @@ def calc_combo_price_best_effort_match(symbol_rates_list, combination):
         low_combo_price += item['price_low'] / trio_point_price_map[symbol_value] * 3
         closed_combo_price += item['price_closed'] / trio_point_price_map[symbol_value] * 3
 
-    result = CombinedSymbol(symbol=generate_combination_name(combination), ts=most_common_ts, interval=first_interval,
-                            price_open=open_combo_price,
-                            price_high=high_combo_price, price_low=low_combo_price, price_closed=closed_combo_price)
+    result = dict(symbol=generate_combination_name(combination), ts=most_common_ts, interval=first_interval,
+                  price_open=open_combo_price,
+                  price_high=high_combo_price, price_low=low_combo_price, price_closed=closed_combo_price)
     return result
 
 
@@ -315,7 +315,6 @@ def update_historical_combined_data(interval, start, end, combination_ids=[]):
     if len(combination_ids) > 0:
         combinations = Combination.select().where(Combination.id.in_(combination_ids))
     for combination in combinations:
-        print(combination)
         data = get_historical_symbol_rates_list(combination.symbol_list.split(","),
                                                 start.timestamp(), end.timestamp(), interval)
         result = []
@@ -324,8 +323,7 @@ def update_historical_combined_data(interval, start, end, combination_ids=[]):
             item = calc_combo_price(sub_list, combination)
             if item:
                 result.append(item)
-                item.save()
+                # item.save()
         # 批量入库
-        # if len(result) > 0:
-        #     batch_save_by_model(CombinedSymbol, result)
-        # print("----->", len(result))
+        if len(result) > 0:
+            CombinedSymbol.replace_many(result).execute()
