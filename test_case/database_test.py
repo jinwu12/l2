@@ -70,6 +70,10 @@ class DatabaseTestCase(unittest.TestCase):
         cursor = data_source_db.execute_sql('select * from xau_usd where ts>%s', 10000)
         print(len(cursor.fetchall()))
 
+    def test_cache(self):
+        print(global_cache.get_symbol_by_id(1).name)
+        print(global_cache.get_symbol_by_id(2).name)
+        print(global_cache.get_symbol_by_id(22))
 
 if __name__ == '__main__':
     unittest.main()

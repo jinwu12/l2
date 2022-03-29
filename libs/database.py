@@ -336,10 +336,10 @@ class Cache:
             self.symbol_map[symbol.id] = symbol
 
     def get_symbol_by_id(self, symbol_id):
-        return self.symbol_map[symbol_id]
+        return self.symbol_map.get(symbol_id)
 
     def get_table_name_by_symbol_id(self, symbol_id):
-        return get_model_table_by_symbol_value(self.symbol_map[symbol_id].symbol_value)
+        return get_model_table_by_symbol_value(self.symbol_map.get(symbol_id).symbol_value)
 
 
 global_cache = Cache()
