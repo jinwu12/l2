@@ -11,8 +11,8 @@ class DatabaseTestCase(unittest.TestCase):
     def setUpClass(cls):
         # 创建表
         print("create tables...")
-        data_source_db.create_tables([XauUsd, Dxy, DxyMt5, EurUsd, GbpUsd, Tnx, UsdCad, UsdChf, UsdJpy, UsdSek,
-                                      CombinedSymbol])
+        data_source_db.create_tables([XauUsd, Dxy, DxyMt5, EurUsd, GbpUsd, Tnx, UsdCad, UsdChf, UsdJpy, UsdSek])
+        production_combined_data_db.create_tables([CombinedSymbol])
 
     def test_account_query(self):
         accounts = AccountInfo.select()
