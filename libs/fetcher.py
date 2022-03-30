@@ -33,7 +33,7 @@ def get_historical_data_from_yfinance(symbol, interval, start, end, period=''):
             o_data = yf.download(tickers=symbol, interval=interval, period=period, progress=False)
         else:
             o_data = yf.download(tickers=symbol, interval=interval, start=start, end=end, progress=False)
-    except (ssl.SSLEOFError, ssl.SSLError):
+    except:
         logger.error("%s:拉取%s~%s@interval:%s失败", symbol, str(start), str(end), interval)
         return False
 
@@ -130,7 +130,7 @@ def update_realtime_data(interval, skip_symbol=[]):
             # 拉取数据，并截取最后一个元素作为结果
             try:
                 yf_rates.append(get_historical_data_from_yfinance(
-                    symbol_value, interval, yf_start_time, yf_end_time,'1d')[-1])
+                    symbol_value, interval, yf_start_time, yf_end_time, '1d')[-1])
             except IndexError:
                 logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
             else:
