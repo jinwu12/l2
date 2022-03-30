@@ -304,12 +304,6 @@ class UsdSek(BaseSymbolPrice):
         return "USDSEK"
 
 
-class CombinedSymbol(BaseSymbolPrice):
-    @classmethod
-    def getSymbol(cls):
-        return "COMBINED"
-
-
 ###############################################
 # 组合价格数据存放在production_combined_data库中
 production_combined_data_db = MySQLDatabase(
@@ -319,6 +313,19 @@ production_combined_data_db = MySQLDatabase(
     passwd=db_passwords,
     port=3306
 )
+
+
+class CombinedSymbol(BaseSymbolPrice):
+    @classmethod
+    def getSymbol(cls):
+        return "COMBINED"
+
+    class Meta:
+        database = production_combined_data_db
+        legacy_table_names = False
+        indexes = (
+            (("symbol", "ts", "interval"), True),
+        )
 
 
 ###############################################
