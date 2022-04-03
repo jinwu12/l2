@@ -1,10 +1,5 @@
-import datetime
 import traceback
-from collections import defaultdict, Counter
-from decimal import *
-
-from dateutil.relativedelta import relativedelta
-from playhouse.shortcuts import model_to_dict
+from collections import Counter
 
 from libs.database import *
 
@@ -245,7 +240,7 @@ def calc_combo_price_best_effort_match(symbol_rates_list, combination):
             logger.error("提供的数据interval不一致：%s", candidate_rates_list)
             return None
         elif abs(most_common_ts - rate['ts']) > max_gap and rate['symbol'] not in lack_symbols:  # 重拉数据
-            rate = get_lastest_price_before_dst_ts(rate['symbol'], first_interval, most_common_ts)
+            rate = get_lastest_price_before_dst_ts(rate['symbol'], first_interval, max(valid_ts_list))  # 这里要取最大的ts
             if rate:
                 valid_rates_list.append(rate)
             else:
