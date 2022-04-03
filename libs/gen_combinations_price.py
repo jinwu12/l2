@@ -46,6 +46,7 @@ def get_historical_symbol_rates_list(symbol_ids, start_ts, end_ts, interval):
     start_ts = commons.check_and_fix_timestamp(start_ts, interval)
     end_ts = commons.check_and_fix_timestamp(end_ts, interval)
     data = {}
+    ts_gap = 60 if interval == '1m' else 3600
     symbols = Symbol.select().where(Symbol.id.in_(symbol_ids))
     for symbol in symbols:
         # print(symbol)
@@ -57,7 +58,11 @@ def get_historical_symbol_rates_list(symbol_ids, start_ts, end_ts, interval):
                       tbl, interval, start_ts, end_ts)
             cursor = data_source_db.execute_sql(sql)
             column_names = [x[0] for x in cursor.description]
-            result = [dict(zip(column_names, row)) for row in cursor.fetchall()]
+            candidates = [dict(zip(column_names, row)) for row in cursor.fetchall()]
+            result = []
+            for item in candidates:
+                if item['ts'] % ts_gap == 0:  # 过滤掉非标准时间戳的
+                    result.append(item)
 
             exist = data.get(symbol.name)
             if exist is None:
