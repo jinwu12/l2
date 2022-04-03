@@ -112,9 +112,7 @@ def update_realtime_data(interval, skip_symbol=[]):
         symbol_value = symbol.symbol_value
         method = symbol.method
         timezone = symbol.timezone
-        yf_rates = []
-        mt5_rates = []
-        dxy_rates = []
+        rates = []
         # 如果遇到需要跳过的symbol，则直接跳过此symbol的拉取
         if symbol_name in skip_symbol:
             continue
@@ -128,13 +126,13 @@ def update_realtime_data(interval, skip_symbol=[]):
             # yfinance的分钟级及小时级数据拉取逻辑一致
             # 拉取数据，并截取最后一个元素作为结果
             try:
-                yf_rates.append(get_historical_data_from_yfinance(
+                rates.append(get_historical_data_from_yfinance(
                     symbol_value, interval, yf_start_time, yf_end_time, '1d')[-1])
             except IndexError:
                 logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
             else:
                 # 数据入库
-                batch_save_by_symbol(symbol_value, yf_rates)
+                batch_save_by_symbol(symbol_value, rates)
 
         # 拉取mt5数据的symbol数据
         elif method == 'get_historical_data_from_mt5':
@@ -146,10 +144,10 @@ def update_realtime_data(interval, skip_symbol=[]):
             mt5_end_time = mt5_start_time
             # 拉取数据
             try:
-                mt5_rates.append(
+                rates.append(
                     get_historical_data_from_mt5(symbol_value, interval, mt5_start_time, mt5_end_time)[0])
                 # 数据入库
-                batch_save_by_symbol(symbol_value, mt5_rates)
+                batch_save_by_symbol(symbol_value, rates)
             except IndexError:
                 logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
 
@@ -162,11 +160,12 @@ def update_realtime_data(interval, skip_symbol=[]):
             mt5_end_time = mt5_start_time
             # 根据mt5等货币对报价，生成DXY
             try:
-                dxy_rates = get_dxy_from_mt5(mt5_start_time, mt5_end_time, interval)
+                rates.append(get_dxy_from_mt5(mt5_start_time, mt5_end_time, interval))
                 # 数据入库
-                batch_save_by_symbol(symbol_value, dxy_rates)
+                batch_save_by_symbol(symbol_value, rates)
             except IndexError:
                 logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
+        result_list.extend(rates)
     # print(datetime.now(), result_list)
     logger.info("%s", result_list)
     return result_list
