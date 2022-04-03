@@ -1,5 +1,4 @@
 import math
-import ssl
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -100,6 +99,8 @@ def get_historical_data_from_mt5(symbol, interval, start, end):
 
 # 封装入库实时数据schedule函数
 def update_realtime_data(interval, skip_symbol=[]):
+    if interval not in ['1m', '1h']:
+        raise Exception("Invalid interval:", interval)
     # 初始化数据库连接
     symbols = Symbol.select()
     # 结果列表
@@ -117,8 +118,6 @@ def update_realtime_data(interval, skip_symbol=[]):
         # 如果遇到需要跳过的symbol，则直接跳过此symbol的拉取
         if symbol_name in skip_symbol:
             continue
-        # 用于保存每种计算方式的字典
-        data_dict = dict(symbol=symbol_value, interval=interval, timezone=timezone, method=method)
         # 拉取yfinance数据源的symbol数据
         if method == 'get_historical_data_from_yfinance':
             # 生成时间间隔，必需按照时区转换时间后，按照隔日进行拉取
@@ -134,84 +133,40 @@ def update_realtime_data(interval, skip_symbol=[]):
             except IndexError:
                 logger.error("%s:数据拉取失败@%s", symbol_value, str(yf_start_time) + "~" + str(yf_end_time))
             else:
-                # 附加到data_dict中
-                data_dict['value'] = yf_rates
                 # 数据入库
                 batch_save_by_symbol(symbol_value, yf_rates)
-                result_list.append(data_dict)
 
         # 拉取mt5数据的symbol数据
         elif method == 'get_historical_data_from_mt5':
-            # 分钟级的逻辑
-            if interval == '1m':
-                # 生成转换为mt5时区后的时间间隔并去掉秒，开始时间为上一分钟
-                mt5_tz = pytz.timezone(timezone)
-                current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M')
-                mt5_start_time = pd.to_datetime(current_time) - timedelta(minutes=1)
-                # 结束时间等于开始时间
-                mt5_end_time = mt5_start_time
-                # 拉取数据
-                try:
-                    mt5_rates.append(
-                        get_historical_data_from_mt5(symbol_value, interval, mt5_start_time, mt5_end_time)[0])
-                    # 附加到data_dict中
-                    data_dict['value'] = mt5_rates
-                    # 数据入库
-                    batch_save_by_symbol(symbol_value, mt5_rates)
-                except IndexError:
-                    logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
-            # 小时级的逻辑
-            if interval == '1h':
-                # 生成转换为mt5时区后的时间间隔并去掉秒和分钟，开始时间为上一小时
-                mt5_tz = pytz.timezone(timezone)
-                current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H')
-                # 开始时间为上一个小时
-                mt5_start_time = pd.to_datetime(current_time) - timedelta(hours=1)
-                # 结束时间等于开始时间
-                mt5_end_time = mt5_start_time
-                # 拉取数据
-                try:
-                    mt5_rates.append(
-                        get_historical_data_from_mt5(symbol_value, interval, mt5_start_time, mt5_end_time)[0])
-                    # 附加到data_dict中
-                    data_dict['value'] = mt5_rates
-                    # 数据入库
-                    batch_save_by_symbol(symbol_value, mt5_rates)
-                except IndexError:
-                    logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_start_time))
-            result_list.append(data_dict)
+            mt5_tz = pytz.timezone(timezone)
+            current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M' if interval == '1m' else '%Y-%m-%d %H')
+            # 开始时间为当前时间减去interval
+            mt5_start_time = pd.to_datetime(current_time) - timedelta(minutes=1 if interval == '1m' else 60)
+            # 结束时间等于开始时间
+            mt5_end_time = mt5_start_time
+            # 拉取数据
+            try:
+                mt5_rates.append(
+                    get_historical_data_from_mt5(symbol_value, interval, mt5_start_time, mt5_end_time)[0])
+                # 数据入库
+                batch_save_by_symbol(symbol_value, mt5_rates)
+            except IndexError:
+                logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
+
         # 从mt5拉取数据去生成的symbol数据,当前只有dxy，如果有需要就继续在此分支下添加if即可
         if method == 'originate_from_mt5':
+            mt5_tz = pytz.timezone(timezone)
+            current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M' if interval == '1m' else '%Y-%m-%d %H')
+            mt5_start_time = pd.to_datetime(current_time) - timedelta(minutes=1 if interval == '1m' else 60)
+            # 结束时间与开始时间相等
+            mt5_end_time = mt5_start_time
             # 根据mt5等货币对报价，生成DXY
-            if symbol_value == 'DXY_MT5':
-                # 分钟级的逻辑
-                if interval == '1m':
-                    # 生成转换为mt5时区后的时间间隔并去掉秒，开始时间为上一分钟
-                    mt5_tz = pytz.timezone(timezone)
-                    current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M')
-                    mt5_start_time = pd.to_datetime(current_time) - timedelta(minutes=1)
-                    # 结束时间与开始时间相等
-                    mt5_end_time = mt5_start_time
-                # 小时级的逻辑
-                if interval == '1h':
-                    # 生成转换为mt5时区后的时间间隔并去掉秒和分钟，开始时间为上一小时
-                    mt5_tz = pytz.timezone(timezone)
-                    current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H')
-                    # 开始时间为上一个小时
-                    mt5_start_time = pd.to_datetime(current_time) - timedelta(hours=1)
-                    # 结束时间与开始时间相等
-                    mt5_end_time = mt5_start_time
-                # 拉取并计算dxy
-                try:
-                    dxy_rates = get_dxy_from_mt5(mt5_start_time, mt5_end_time, interval)
-                except IndexError:
-                    logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
-                else:
-                    # 附加到data_dict中
-                    data_dict['value'] = dxy_rates
-                    # 数据入库
-                    batch_save_by_symbol(symbol_value, dxy_rates)
-            result_list.append(data_dict)
+            try:
+                dxy_rates = get_dxy_from_mt5(mt5_start_time, mt5_end_time, interval)
+                # 数据入库
+                batch_save_by_symbol(symbol_value, dxy_rates)
+            except IndexError:
+                logger.error("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
     # print(datetime.now(), result_list)
     logger.info("%s", result_list)
     return result_list
