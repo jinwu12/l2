@@ -27,7 +27,7 @@ def check_yfinance_and_reupdate(interval, symbol='^TNX'):
     df = pd.DataFrame(o_data)
     result_list = []
     # 获取symbol对应表名 
-    tnx_tbl = database.get_model_table_by_symbol_value('^TNX')
+    tnx_tbl = get_model_table_by_symbol_value('^TNX')
     diff_count = 0
     # 遍历dataframe中的每一行
     for pd_timestamp, row in df.iterrows():

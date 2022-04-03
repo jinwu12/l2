@@ -19,6 +19,14 @@ class MyTestCase(unittest.TestCase):
         ts = datetime_to_timestamp("2022-02-16 09:36:00", "US/Eastern")
         self.assertEqual(1645022160, ts)
 
+    def test_check_and_fix_timestamp(self):
+        self.assertEqual(1645022160, check_and_fix_timestamp(1645022160, '1m'))
+        self.assertEqual(1645022160, check_and_fix_timestamp(1645022169, '1m'))
+        self.assertEqual(1645022160, check_and_fix_timestamp(1645022199, '1m'))
+        self.assertEqual(1647608400, check_and_fix_timestamp(1647608400, '1h'))
+        self.assertEqual(1647608400, check_and_fix_timestamp(1647608499, '1h'))
+        self.assertEqual(1647608400, check_and_fix_timestamp(1647608999, '1h'))
+
 
 if __name__ == '__main__':
     unittest.main()
