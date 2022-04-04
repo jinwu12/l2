@@ -118,10 +118,8 @@ def update_realtime_data(interval, skip_symbol=[]):
             continue
         # 拉取yfinance数据源的symbol数据
         if method == 'get_historical_data_from_yfinance':
-            # 生成时间间隔，必需按照时区转换时间后，按照隔日进行拉取
             # 实时数据拉取的start和end必须只传到日为止，比如2022-03-21，不能在后面带时分秒，否则会报错
-            yf_tz = pytz.timezone(timezone)
-            yf_start_time = datetime.now(tz=yf_tz).date()
+            yf_start_time = datetime.now().date()
             yf_end_time = yf_start_time + timedelta(days=1)
             # yfinance的分钟级及小时级数据拉取逻辑一致
             # 拉取数据，并截取最后一个元素作为结果
@@ -137,9 +135,11 @@ def update_realtime_data(interval, skip_symbol=[]):
         # 拉取mt5数据的symbol数据
         elif method == 'get_historical_data_from_mt5':
             mt5_tz = pytz.timezone(timezone)
-            current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M' if interval == '1m' else '%Y-%m-%d %H')
             # 开始时间为当前时间减去interval
-            mt5_start_time = pd.to_datetime(current_time) - timedelta(minutes=1 if interval == '1m' else 60)
+            if interval == '1m':
+                mt5_start_time = datetime.now(tz=mt5_tz).replace(second=0, microsecond=0) - timedelta(minutes=1)
+            else:
+                mt5_start_time = datetime.now(tz=mt5_tz).replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
             # 结束时间等于开始时间
             mt5_end_time = mt5_start_time
             # 拉取数据
@@ -154,9 +154,12 @@ def update_realtime_data(interval, skip_symbol=[]):
         # 从mt5拉取数据去生成的symbol数据,当前只有dxy，如果有需要就继续在此分支下添加if即可
         if method == 'originate_from_mt5':
             mt5_tz = pytz.timezone(timezone)
-            current_time = datetime.now(tz=mt5_tz).strftime('%Y-%m-%d %H:%M' if interval == '1m' else '%Y-%m-%d %H')
-            mt5_start_time = pd.to_datetime(current_time) - timedelta(minutes=1 if interval == '1m' else 60)
-            # 结束时间与开始时间相等
+            # 开始时间为当前时间减去interval
+            if interval == '1m':
+                mt5_start_time = datetime.now(tz=mt5_tz).replace(second=0, microsecond=0) - timedelta(minutes=1)
+            else:
+                mt5_start_time = datetime.now(tz=mt5_tz).replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
+                # 结束时间与开始时间相等
             mt5_end_time = mt5_start_time
             # 根据mt5等货币对报价，生成DXY
             try:
