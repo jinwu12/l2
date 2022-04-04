@@ -160,7 +160,7 @@ def update_realtime_data(interval, skip_symbol=[]):
             mt5_end_time = mt5_start_time
             # 根据mt5等货币对报价，生成DXY
             try:
-                rates.append(get_dxy_from_mt5(mt5_start_time, mt5_end_time, interval))
+                rates.extend(get_dxy_from_mt5(mt5_start_time, mt5_end_time, interval))
                 # 数据入库
                 batch_save_by_symbol(symbol_value, rates)
             except IndexError:
