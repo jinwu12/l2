@@ -144,16 +144,43 @@ class MyTestCase(unittest.TestCase):
             print(commons.timestamp_to_datetime_str(item['ts'], 'ETC/GMT+4'), item)
 
     def test_get_historical_data_from_mt5(self):
-        symbol = "XAUUSD"
-        interval = "1h"
-        start = datetime(2022, 3, 24, 18, 00, 0, tzinfo=pytz.timezone('ETC/UTC'))
-        end = datetime(2022, 3, 24, 22, 00, 0, tzinfo=pytz.timezone('ETC/UTC'))
+        # symbol = "XAUUSD"
+        # interval = "1h"
+        # start = datetime(2022, 3, 24, 18, 00, 0, tzinfo=pytz.timezone('ETC/UTC'))
+        # end = datetime(2022, 3, 24, 22, 00, 0, tzinfo=pytz.timezone('ETC/UTC'))
+        # data_list = fetcher.get_historical_data_from_mt5(symbol, interval, start, end)
+        # for item in data_list:
+        #     print(item)
+        # self.assertEqual(5, len(data_list))
+        # self.assertEqual({'symbol': 'XAUUSD', 'interval': '1h', 'ts': 1648144800, 'price_open': 1964.86,
+        #                   'price_high': 1965.54, 'price_low': 1958.51, 'price_closed': 1963.0}, data_list[0])
+
+        symbol = 'EURUSD'
+        interval = '1m'
+        timezone = 'ETC/GMT-3'
+        start = datetime(2022, 4, 4, 8, 1, 0, tzinfo=pytz.timezone(timezone))
+        end = datetime(2022, 4, 4, 8, 1, 0, tzinfo=pytz.timezone(timezone))
         data_list = fetcher.get_historical_data_from_mt5(symbol, interval, start, end)
         for item in data_list:
-            print(item)
-        self.assertEqual(5, len(data_list))
-        self.assertEqual({'symbol': 'XAUUSD', 'interval': '1h', 'ts': 1648144800, 'price_open': 1964.86,
-                          'price_high': 1965.54, 'price_low': 1958.51, 'price_closed': 1963.0}, data_list[0])
+            print(commons.timestamp_to_datetime_str(item['ts'], timezone), item)
+
+        start = datetime(2022, 4, 4, 8, 1, 0, tzinfo=pytz.timezone('UTC'))
+        end = datetime(2022, 4, 4, 8, 1, 0, tzinfo=pytz.timezone('UTC'))
+        data_list = fetcher.get_historical_data_from_mt5(symbol, interval, start, end)
+        for item in data_list:
+            print(commons.timestamp_to_datetime_str(item['ts'], timezone), item)
+
+        start = datetime(2022, 4, 4, 3, 1, 0, tzinfo=pytz.timezone('UTC'))
+        end = datetime(2022, 4, 4, 3, 1, 0, tzinfo=pytz.timezone('UTC'))
+        data_list = fetcher.get_historical_data_from_mt5(symbol, interval, start, end)
+        for item in data_list:
+            print(commons.timestamp_to_datetime_str(item['ts'], timezone), item)
+
+        start = datetime(2022, 4, 4, 8, 1, 0, tzinfo=pytz.timezone('ETC/GMT-8'))
+        end = datetime(2022, 4, 4, 8, 1, 0, tzinfo=pytz.timezone('ETC/GMT-8'))
+        data_list = fetcher.get_historical_data_from_mt5(symbol, interval, start, end)
+        for item in data_list:
+            print(commons.timestamp_to_datetime_str(item['ts'], timezone), item)
 
     def test_fetch_data(self):
         interval = "1h"
