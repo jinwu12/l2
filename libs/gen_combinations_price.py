@@ -140,8 +140,8 @@ def calc_combo_price_strict_match(symbol_rates_list, combination):
                 found = True
                 break
         if not found:
-            logger.error("计算组合价格时缺少对应symbol的行情数据：combo_id=%s, symbol_list=%s, 缺少%s", combination.id,
-                         combination.symbol_list, symbol_value)
+            logger.error("计算组合价格时缺少对应symbol的行情数据：combo_id=%s, symbol_list=%s, 缺少%s: %s", combination.id,
+                         combination.symbol_list, symbol_value, symbol_rates_list)
             return None
     first_rate = valid_rates_list[0]
     first_ts = first_rate['ts']
