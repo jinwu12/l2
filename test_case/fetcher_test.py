@@ -64,6 +64,14 @@ class MyTestCase(unittest.TestCase):
         print(data)
         self.assertEqual(25, len(data))
 
+        print('---------')
+        end = datetime.now(tz=pytz.timezone('UTC')).replace(second=0, microsecond=0)
+        start = end - timedelta(minutes=1)
+        data = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1, start, end)
+        print(data)
+
+
+
     # def test_yfinance_download(self):
     #     # yfinance的download方法中的start和end参数支持str(精确到天)和datetime两种形式，
     #     # 到实现层时，将以当前时区(忽略datetime中的时区)转换为时间戳去获取具体的数据，
