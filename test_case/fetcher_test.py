@@ -78,7 +78,7 @@ class MyTestCase(unittest.TestCase):
         # create DataFrame out of the obtained data
         rates_frame = pd.DataFrame(data)
         # convert time in seconds into the datetime format
-        rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
+        rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s', utc=True)
         print(rates_frame)
 
     # def test_yfinance_download(self):
