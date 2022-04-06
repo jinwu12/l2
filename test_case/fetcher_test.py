@@ -70,6 +70,10 @@ class MyTestCase(unittest.TestCase):
         data = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1, start, end)
         print(data)
 
+        print('---------')
+        data = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 2)
+        print(data)
+
 
 
     # def test_yfinance_download(self):
