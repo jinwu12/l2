@@ -2,6 +2,7 @@ import ssl
 import unittest
 from datetime import datetime, timedelta
 
+import pandas as pd
 import pytz
 import yfinance as yf
 
@@ -74,8 +75,11 @@ class MyTestCase(unittest.TestCase):
         data = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 2)
         print(data)
         print('======')
-        for rate in data:
-            print(rate)
+        # create DataFrame out of the obtained data
+        rates_frame = pd.DataFrame(data)
+        # convert time in seconds into the datetime format
+        rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
+        print(rates_frame)
 
     # def test_yfinance_download(self):
     #     # yfinance的download方法中的start和end参数支持str(精确到天)和datetime两种形式，
