@@ -105,7 +105,7 @@ def calc_combo_price(symbol_rates_list, combination):
     modes = ['strict_match', 'best_effort_match']
     if combination.combined_method not in modes:
         logger.error("目前只支持%s，暂时不支持%s", modes, combination.combined_method)
-        return False, None
+        return None
     if combination.combined_method == modes[0]:
         return calc_combo_price_strict_match(symbol_rates_list, combination)
     else:
