@@ -73,8 +73,9 @@ class MyTestCase(unittest.TestCase):
         print('---------')
         data = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 2)
         print(data)
-
-
+        print('======')
+        for rate in data:
+            print(rate)
 
     # def test_yfinance_download(self):
     #     # yfinance的download方法中的start和end参数支持str(精确到天)和datetime两种形式，
