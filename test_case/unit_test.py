@@ -109,6 +109,15 @@ class TestFunctions(unittest.TestCase):
                 rate3['price_closed'] / rate3_trio_price * 3,
                 data['price_closed'])
 
+            # symbol_rates_list数据等于combination.symbol_list但又不完整
+            symbol_rates_list = [rate1, rate2]
+            combination = Combination(id=1, name='XAUUSD_EURUSD_DXY_strict_match', combined_method='strict_match',
+                                      combination_3point_price=6, trading_symbol='usd', symbol_list='4,7')
+            mode = 'strict_match'
+            data = gen_combinations_price.calc_combo_price_strict_match(
+                symbol_rates_list, combination)
+            self.assertIsNone(data)
+
             # symbol_rates_list数据等于combination.symbol_list，但ts不同
             # ts相差超过1个interval
             symbol_rates_list = [rate12, rate23, rate3]
