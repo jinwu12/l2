@@ -176,7 +176,7 @@ def update_realtime_data(interval, skip_symbol=[]):
     # 以<ts>_<interval>为key，分组
     data = {}
     for item in result_list:
-        key = item['ts'] + '_' + item['interval']
+        key = str(item['ts']) + '_' + item['interval']
         alist = data.get(key)
         if alist is None:
             alist = []
