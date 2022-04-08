@@ -9,7 +9,7 @@ import yfinance as yf
 from retrying import retry
 
 from libs.database import *
-from gen_combinations_price import *
+from libs.gen_combinations_price import *
 
 logger = commons.create_logger()
 
