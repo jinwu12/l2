@@ -105,7 +105,7 @@ def calc_combo_price(symbol_rates_list, combination):
     modes = ['strict_match', 'best_effort_match']
     if combination.combined_method not in modes:
         logger.error("目前只支持%s，暂时不支持%s", modes, combination.combined_method)
-        return False, None
+        return None
     if combination.combined_method == modes[0]:
         return calc_combo_price_strict_match(symbol_rates_list, combination)
     else:
@@ -218,7 +218,7 @@ def calc_combo_price_best_effort_match(symbol_rates_list, combination):
         if not found:
             lack_symbols.append(symbol.symbol_value)
     if len(candidate_rates_list) == 0:
-        logger.error("best_effort模式下没有有效的候选数据：combination=%, symbol_rates_list=%s", combination, symbol_rates_list)
+        logger.error("best_effort模式下没有有效的候选数据：combination=%s, symbol_rates_list=%s", combination, symbol_rates_list)
         return None
     # 出现次数最多的ts
     ts_counter = Counter(valid_ts_list)
@@ -250,7 +250,7 @@ def calc_combo_price_best_effort_match(symbol_rates_list, combination):
                 valid_rates_list.append(rate)
             else:
                 logger.error("计算组合价格时缺少对应symbol数据(ts<=%d)：combo_id=%s, symbol_list=%s, 缺少%s", most_common_ts,
-                             rate['symbol'], combination.symbol_list, symbol_value)
+                             combination.id, combination.symbol_list, symbol_value)
                 return None
         else:
             valid_rates_list.append(rate)
@@ -262,7 +262,6 @@ def calc_combo_price_best_effort_match(symbol_rates_list, combination):
     closed_combo_price = 0
     for item in valid_rates_list:
         symbol_value = item['symbol']
-
         # 计算 价格/3点价*3
         open_combo_price += item['price_open'] / trio_point_price_map[symbol_value] * 3
         high_combo_price += item['price_high'] / trio_point_price_map[symbol_value] * 3

@@ -9,6 +9,7 @@ import yfinance as yf
 from retrying import retry
 
 from libs.database import *
+from libs.gen_combinations_price import *
 
 logger = commons.create_logger()
 
@@ -171,6 +172,29 @@ def update_realtime_data(interval, skip_symbol=[]):
         result_list.extend(rates)
     # print(datetime.now(), result_list)
     logger.info("%s", result_list)
+
+    # 以<ts>_<interval>为key，分组
+    data = {}
+    for item in result_list:
+        key = str(item['ts']) + '_' + item['interval']
+        alist = data.get(key)
+        if alist is None:
+            alist = []
+        alist.append(item)
+        data[key] = alist
+
+    # 计算组合价
+    result = []
+    for combination in Combination.select():
+        for alist in data.values():
+            item = calc_combo_price(alist, combination)
+            if item:
+                result.append(item)
+    # 批量入库
+    if len(result) > 0:
+        CombinedSymbol.replace_many(result).execute()
+    logger.info("入库组合价：%d， %s", len(result), result)
+
     return result_list
 
 
