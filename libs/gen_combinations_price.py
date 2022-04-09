@@ -71,9 +71,23 @@ def get_historical_symbol_rates_list(symbol_ids, start_ts, end_ts, interval):
                 data[symbol.name] = exist + result
         except:
             logger.error(traceback.format_exc())
+    return group_rates_by_ts(start_ts, end_ts, interval, symbols, data)
 
-    # 组织返回结果
-    # print(data)
+
+def group_rates_by_ts(start_ts, end_ts, interval, symbols, data):
+    """
+    将数据(data)以ts分组
+    :param start_ts: 开始时间戳
+    :param end_ts: 开始时间戳
+    :param interval: 时间间隔(1m或1h)
+    :param symbols: 同一分组的symbol
+    :param data: 字典数据，key为symbol value，value为数据dict列表
+    :return:[
+        [symbol1@时间戳1的报价dict, symbol2@时间戳1的报价dict, ...],
+        [symbol1@时间戳2的报价dict, symbol2@时间戳2的报价dict, ...],
+        ...
+        ]
+    """
     result = []
     ts = start_ts
     while ts <= end_ts:
@@ -86,7 +100,8 @@ def get_historical_symbol_rates_list(symbol_ids, start_ts, end_ts, interval):
         if len(data_in_same_ts) > 0:
             result.append(data_in_same_ts)
         else:
-            logger.warning("组合(%s)在%s(%d)缺数据", symbol_ids, commons.timestamp_to_datetime_str(ts), ts)
+            logger.warning("组合(%s)在%s(%d)缺数据", [symbol.id for symbol in symbols],
+                           commons.timestamp_to_datetime_str(ts), ts)
         if "1m" == interval:
             ts += 60
         elif "1h" == interval:
