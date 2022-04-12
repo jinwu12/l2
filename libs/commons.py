@@ -56,3 +56,8 @@ def datetime_str_with_timezone_to_timestamp(time):
 def check_and_fix_timestamp(timestamp, interval='1m'):
     """检查并修正时间戳(比如，interval是1分钟，然后时间戳却不是整分)，向下取整"""
     return timestamp - timestamp % dict({'1m': 60, '1h': 60 * 60})[interval]
+
+
+def get_timezone_timestamp_offset(timezone):
+    """获取指定时区相对于UTC时间的时间戳偏移值(单位为秒)"""
+    return datetime.now(pytz.timezone(timezone)).utcoffset().total_seconds()

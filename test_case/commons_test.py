@@ -27,6 +27,13 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(1647608400, check_and_fix_timestamp(1647608499, '1h'))
         self.assertEqual(1647608400, check_and_fix_timestamp(1647608999, '1h'))
 
+    def test_get_timezone_timestamp_offset(self):
+        self.assertEqual(0, get_timezone_timestamp_offset('UTC'))
+        self.assertEqual(0, get_timezone_timestamp_offset('ETC/UTC'))
+        self.assertEqual(3*60*60, get_timezone_timestamp_offset('ETC/GMT-3'))
+        self.assertEqual(8*60*60, get_timezone_timestamp_offset('ETC/GMT-8'))
+        self.assertEqual(-8*60*60, get_timezone_timestamp_offset('ETC/GMT+8'))
+
 
 if __name__ == '__main__':
     unittest.main()
