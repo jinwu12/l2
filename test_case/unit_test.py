@@ -1,23 +1,22 @@
 import sys
 sys.path.append("..")
-from playhouse.shortcuts import model_to_dict
-from unittest.mock import Mock, patch
-import json
-import datetime
-from libs import gen_combinations_price
-from libs.database import *
 import unittest
+from libs.database import *
+from libs import gen_combinations_price
+import datetime
+import json
+from unittest.mock import Mock, patch
+from playhouse.shortcuts import model_to_dict
 
 
 
 class TestFunctions(unittest.TestCase):
 
-
     def test_get_lastest_price_before_dst_ts(self):
         dst_ts = 1641160800
         result = gen_combinations_price.get_lastest_price_before_dst_ts(
             "DX-Y.NYB", "1h", dst_ts)
-        #print(result)
+        # print(result)
         self.assertEqual("DX-Y.NYB", result['symbol'])
         self.assertEqual(dst_ts, result['ts'])
         self.assertEqual(95.67, result['price_open'])
@@ -29,23 +28,225 @@ class TestFunctions(unittest.TestCase):
             "DX-Y.NYB", "1h", 0)
         self.assertTrue(result is None)
 
-    def test_get_historical_symbol_rates_list(self):
-        start = 1638547200
-        end = 1639065600
-        data = gen_combinations_price.get_historical_symbol_rates_list(
-            [1, 4], start, end, '1h')
-        print(len(data))
-        for item in data:
-            print(item)
-        self.assertTrue(len(data) > 0)
-        for item in data:
-            ts = -1
-            for sub_item in item:  # 同list中的数据ts应该一致
-                cur_ts = sub_item['ts']
-                if ts < 0:
-                    ts = cur_ts
-                else:
-                    self.assertEqual(ts, cur_ts)
+    def test_group_rates_by_ts(self):
+        symbol1 = Symbol(id=1, name='XAUUSD',
+                         symbol_value='XAUUSD', trio_point_price=5)
+        symbol2 = Symbol(id=4, name='EURUSD',
+                         symbol_value='EURUSD', trio_point_price=6)
+        symbol3 = Symbol(id=3, name='DXY', symbol_value='DXY',
+                         trio_point_price=7)
+        ts1 = 1577970000
+        ts2 = 1577973600
+        ts3 = 1577977200
+        tss = [ts1, ts2, ts3]
+
+        rate11 = {'symbol_name': 'XAUUSD', 'interval': '1h', 'ts': ts1, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+        rate12 = {'symbol_name': 'XAUUSD', 'interval': '1h', 'ts': ts2, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+        rate13 = {'symbol_name': 'XAUUSD', 'interval': '1h', 'ts': ts3, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+
+        # symbol中存在至少1个ts为非标时间（小于1个interval或大于1个interval）
+        rate21 = {'symbol_name': 'EURUSD', 'interval': '1h', 'ts': ts1+1, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+        rate31 = {'symbol_name': 'DXY', 'interval': '1h', 'ts': ts1+3601, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+        start = 1577970000
+        end = 1577974000
+        symbols = [symbol1, symbol2, symbol3]
+        data = {'XAUUSD': [rate11], 'EURUSD': [rate21], 'DXY': [rate31]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(1, len(results))
+        self.assertEqual(1, len(results[0]))
+        self.assertEqual(ts1, results[0][0]['ts'])
+
+        # 一个symbol一个ts
+        start = 1577970000
+        end = 1577970000
+        symbols = [symbol1]
+        data = {'XAUUSD': [rate11]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(1, len(results))
+        self.assertEqual(ts1, results[0][0]['ts'])
+
+        # 一个symbol多个ts
+        start = 1577970000
+        end = 1577977200
+        symbols = [symbol1]
+        data = {'XAUUSD': [rate11, rate12, rate13]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(3, len(results))
+        for i in range(3):
+            self.assertEqual(tss[i], results[i][0]['ts'])
+
+        # 2个symbol一个相同ts
+        rate21 = {'symbol_name': 'EURUSD', 'interval': '1h', 'ts': ts1, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+        start = 1577970000
+        end = 1577970000
+        symbols = [symbol1, symbol2]
+        data = {'XAUUSD': [rate11], 'EURUSD': [rate21]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(1, len(results))
+        self.assertEqual(ts1, results[0][0]['ts'])
+        self.assertEqual(ts1, results[0][1]['ts'])
+
+        # 多个symbol一个相同ts
+        rate31 = {'symbol_name': 'DXY', 'interval': '1h', 'ts': ts1, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+        start = 1577970000
+        end = 1577970000
+        symbols = [symbol1, symbol2, symbol3]
+        data = {'XAUUSD': [rate11], 'EURUSD': [rate21], 'DXY': [rate31]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(1, len(results))
+        for i in range(len(symbols)):
+            self.assertEqual(ts1, results[0][i]['ts'])
+
+        # 2个symbol一个不同ts
+        start = 1577970000
+        end = 1577974000
+        symbols = [symbol1, symbol3]
+        data = {'XAUUSD': [rate12], 'DXY': [rate31]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(2, len(results))
+        for i in range(2):
+            self.assertEqual(1, len(results[i]))
+            self.assertEqual(tss[i], results[i][0]['ts'])
+
+        # 2个symbol有多个相等的ts
+        rate32 = {'symbol_name': 'DXY', 'interval': '1h', 'ts': ts2, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+        rate33 = {'symbol_name': 'DXY', 'interval': '1h', 'ts': ts3, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+        start = 1577970000
+        end = 1577978000
+        symbols = [symbol1, symbol3]
+        data = {'XAUUSD': [rate11, rate12, rate13],
+                'DXY': [rate31, rate32, rate33]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(3, len(results))
+        for i in range(3):
+            self.assertEqual(2, len(results[i]))
+            for j in range(len(results[i])):
+                self.assertEqual(tss[i], results[i][j]['ts'])
+
+        # 2个symbol的ts个数不相等,至少有一个ts在所有symbol中均存在报价点
+        start = 1577970000
+        end = 1577978000
+        symbols = [symbol1, symbol3]
+        data = {'XAUUSD': [rate11, rate12, rate13], 'DXY': [rate31, rate32]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(3, len(results))
+        self.assertEqual(2, len(results[0]))
+        self.assertEqual(2, len(results[1]))
+        self.assertEqual(1, len(results[2]))
+        for i in range(len(results)):
+            for j in range(len(results[i])):
+                self.assertEqual(tss[i], results[i][j]['ts'])
+
+        # 2个symbol的ts个数不相等,每个ts只有一个symbol中均存在报价点
+        start = 1577970000
+        end = 1577978000
+        symbols = [symbol1, symbol3]
+        data = {'XAUUSD': [rate11, rate13], 'DXY': [rate32]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(3, len(results))
+        for i in range(len(results)):
+            self.assertEqual(1, len(results[i]))
+            self.assertEqual(tss[i], results[i][0]['ts'])
+
+        # 多个symbol均有1个ts,至少有一个symbol的ts与其它symbol的ts不相等
+        start = 1577970000
+        end = 1577978000
+        symbols = [symbol1, symbol2, symbol3]
+        data = {'XAUUSD': [rate11], 'EURUSD': [rate21], 'DXY': [rate32]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(2, len(results))
+        self.assertEqual(2, len(results[0]))
+        self.assertEqual(1, len(results[1]))
+        for i in range(len(results)):
+            for j in range(len(results[i])):
+                self.assertEqual(tss[i], results[i][j]['ts'])
+
+        # 多个symbol有多个相等的ts
+        rate22 = {'symbol_name': 'EURUSD', 'interval': '1h', 'ts': ts2, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+        rate23 = {'symbol_name': 'EURUSD', 'interval': '1h', 'ts': ts3, 'price_open': 1.0, 'price_high': 1.0, 'price_low': 1.0,
+                  'price_closed': 1.0}
+        start = 1577970000
+        end = 1577978000
+        symbols = [symbol1, symbol2, symbol3]
+        data = {'XAUUSD': [rate11, rate12, rate13], 'EURUSD': [
+            rate21, rate22, rate23], 'DXY': [rate31, rate32, rate33]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(3, len(results))
+        for i in range(3):
+            self.assertEqual(3, len(results[i]))
+            for j in range(len(results[i])):
+                self.assertEqual(tss[i], results[i][j]['ts'])
+
+        # 多个symbol有相同数量的ts，至少有一个symbol的ts列表中有一个ts与其它symbol的ts列表中的所有值均不相等
+
+        start = 1577970000
+        end = 1577978000
+        symbols = [symbol1, symbol2, symbol3]
+        data = {'XAUUSD': [rate11, rate12], 'EURUSD': [
+            rate21, rate22], 'DXY': [rate32, rate33]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(3, len(results))
+        self.assertEqual(2, len(results[0]))
+        self.assertEqual(3, len(results[1]))
+        self.assertEqual(1, len(results[2]))
+        for i in range(3):
+
+            for j in range(len(results[i])):
+                self.assertEqual(tss[i], results[i][j]['ts'])
+
+        # 多个symbol至少有一个symbol的ts列表数量与其它symbol不相等，至少有一个ts在所有symbol中均存在报价点
+
+        start = 1577970000
+        end = 1577978000
+        symbols = [symbol1, symbol2, symbol3]
+        data = {'XAUUSD': [rate11, rate12, rate13], 'EURUSD': [
+            rate21, rate22], 'DXY': [rate32, rate33]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(3, len(results))
+        self.assertEqual(2, len(results[0]))
+        self.assertEqual(3, len(results[1]))
+        self.assertEqual(2, len(results[2]))
+        for i in range(3):
+
+            for j in range(len(results[i])):
+                self.assertEqual(tss[i], results[i][j]['ts'])
+
+        # 多个symbol至少有一个symbol的ts列表数量与其它symbol不相等，所有的ts均只在一个symbol中存在报价点
+
+        start = 1577970000
+        end = 1577978000
+        symbols = [symbol1, symbol2, symbol3]
+        data = {'XAUUSD': [rate11, rate12], 'EURUSD': [], 'DXY': [rate33]}
+        results = gen_combinations_price.group_rates_by_ts(
+            start, end, '1h', symbols, data)
+        self.assertEqual(3, len(results))
+        for i in range(3):
+            self.assertEqual(1, len(results[i]))
+            for j in range(len(results[i])):
+                self.assertEqual(tss[i], results[i][j]['ts'])
 
     def test_calculate_combination_3point_price(self):
         combination = Combination(
@@ -217,8 +418,9 @@ class TestFunctions(unittest.TestCase):
             self.assertEqual(rate1['price_low'] / rate1_trio_price * 3 + rate2['price_low'] / rate2_trio_price * 3 + rate3['price_low'] / rate3_trio_price * 3,
                              data['price_low'])
             self.assertEqual(
-                rate1['price_closed'] / rate1_trio_price * 3 + rate2['price_closed'] / \
-                    rate2_trio_price * 3 + rate3['price_closed'] / rate3_trio_price * 3,
+                rate1['price_closed'] / rate1_trio_price * 3 + rate2['price_closed'] /
+                rate2_trio_price * 3 +
+                rate3['price_closed'] / rate3_trio_price * 3,
                 data['price_closed'])
 
             # symbol_rates_list数据等于combination.symbol_list,但ts相差超过1个interval
@@ -229,7 +431,7 @@ class TestFunctions(unittest.TestCase):
             with patch('libs.gen_combinations_price.get_lastest_price_before_dst_ts',
                        get_lastest_price_before_dst_ts_valid2):
                 data = gen_combinations_price.calc_combo_price_best_effort_match(
-                       symbol_rates_list, combination)
+                    symbol_rates_list, combination)
                 get_lastest_price_before_dst_ts_valid2.assert_called_once()  # 对应mock的方法一定调用过一次
                 self.assertTrue(mode in data['symbol'])
                 print(data)
@@ -297,7 +499,7 @@ class TestFunctions(unittest.TestCase):
                                  data['price_low'])
                 self.assertEqual(rate1['price_closed'] / rate1_trio_price * 3 + rate2['price_closed'] / rate2_trio_price * 3 + rate3['price_closed'] / rate3_trio_price * 3,
                                  data['price_closed'])
-            
+
             # symbol_rates_list缺少3点价格数据
             symbol_rates_list = [rate1, rate2]
             combination = Combination(id=1, name='XAUUSD_EURUSD_strict_match', combined_method='strict_match',
@@ -305,7 +507,7 @@ class TestFunctions(unittest.TestCase):
             data = gen_combinations_price.calc_combo_price_strict_match(
                 symbol_rates_list, combination)
             self.assertIsNone(data)
-            
+
             # symbol_rates_list没有combination.symbol_list中的数据
             symbol_rates_list = [rate3]
             combination = Combination(id=1, name='XAUUSD_EURUSD_strict_match', combined_method='strict_match',
@@ -313,7 +515,7 @@ class TestFunctions(unittest.TestCase):
             data = gen_combinations_price.calc_combo_price_strict_match(
                 symbol_rates_list, combination)
             self.assertIsNone(data)
-            
+
             # symbol_rates_list数据不是同一个interval的
             symbol_rates_list = [rate1, rate21]
             combination = Combination(id=1, name='XAUUSD_EURUSD_best_effort', combined_method=mode,
@@ -334,11 +536,12 @@ class TestFunctions(unittest.TestCase):
                     'ts': 1641394800, 'interval': '1h', 'price_open': 4.104220779220778,
                     'price_high': 4.483194805194805, 'price_low': 4.317701298701299,
                     'price_closed': 4.358532467532467}
-        mock_calc_combo_price=Mock(return_value=mock_value)           
+        mock_calc_combo_price=Mock(return_value=mock_value)
         with patch('libs.gen_combinations_price.calc_combo_price', mock_calc_combo_price):
-            gen_combinations_price.update_historical_combined_data('1h', start, end,combination_ids)
+            gen_combinations_price.update_historical_combined_data(
+                '1h', start, end,combination_ids)
             print(mock_calc_combo_price.call_count)
-'''          
+'''
 
 if __name__ == '__main__':
     unittest.main()
