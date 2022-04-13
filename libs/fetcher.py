@@ -57,10 +57,11 @@ def get_historical_data_from_yfinance(symbol, interval, start, end, period=''):
 
 
 # 从mt5拉取制定时间周期内的数据，并将时间标准化为utc时间戳
-def get_historical_data_from_mt5(symbol, interval, start, end):
+def get_historical_data_from_mt5(symbol, timezone, interval, start, end):
     """
     从mt5拉取指定时间区段(闭区间)、指定时间间隔的汇率(rates)数据
     :param symbol: 货币符号，使用Symbol对象时，请传value属性
+    :param timezone: Etc/GMT时区，对应Symbol的时区
     :param interval: 时间间隔，一般有一分钟(1m)，一小时(1h)，一天(1d)等，目前仅支持一分钟和一小时
     :param start: 开始时间(datetime对象，构建时请指定时区)
     :param end: 结束时间(datetime对象，构建时请指定时区)
@@ -80,8 +81,10 @@ def get_historical_data_from_mt5(symbol, interval, start, end):
         return []
 
     # 使用copy_rates_range函数获取该区间内数据
-    # interval传入必须按照timeframe格式，如TIMEFRAME_M1、TIMEFRAME_H1。详情请参考:https://www.mql5.com/en/docs/integration/python_metatrader5/mt5copyratesfrom_py#timeframe
-    rates_range = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_H1 if interval == '1h' else mt5.TIMEFRAME_M1, start, end)
+    # ts数据要做偏移处理
+    ts_off_set = commons.get_timezone_timestamp_offset(timezone)
+    rates_range = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_H1 if interval == '1h' else mt5.TIMEFRAME_M1,
+                                       start.timestamp() + ts_off_set, end.timestamp() + ts_off_set)
     if rates_range is None:
         logger.info("无数据")
         return []
@@ -90,7 +93,7 @@ def get_historical_data_from_mt5(symbol, interval, start, end):
     # 遍历结果列表
     for i in rates:
         # 将结果列表中的tuple元素仅截取时间戳、开盘价、最高价、最低价、收盘价，并拼接上symbol
-        rates_list.append(dict(symbol=symbol, interval=interval, ts=i[0],
+        rates_list.append(dict(symbol=symbol, interval=interval, ts=i[0] - ts_off_set,  # 时间戳偏移处理
                                price_open=i[1], price_high=i[2],
                                price_low=i[3], price_closed=i[4]))
     # 获取完成，关闭连接
@@ -146,7 +149,8 @@ def update_realtime_data(interval, skip_symbol=[]):
             # 拉取数据
             try:
                 rates.append(
-                    get_historical_data_from_mt5(symbol_value, interval, mt5_start_time, mt5_end_time)[0])
+                    get_historical_data_from_mt5(symbol_value, symbol.timezone, interval, mt5_start_time, mt5_end_time)[
+                        0])
                 # 数据入库
                 batch_save_by_symbol(symbol_value, rates)
             except IndexError:
@@ -250,7 +254,8 @@ def calculate_dxy(symbols_rate_list):
 def get_dxy_from_mt5(start, end, interval):
     # start和end必须为utc时间(mt5默认就是使用的utc时间)
     # 定义组成DXY的6个货币对名称，由于拉取数据时所用的标准化名称与实际名称一致并且没有特殊字符，所以这里就不去symbol method表中查，直接赋值即可
-    dxy_symbol_list = ('EURUSD', 'USDJPY', 'GBPUSD', 'USDCAD', 'USDSEK', 'USDCHF')
+    dxy_symbol_list = {'EURUSD': 'Etc/GMT-3', 'USDJPY': 'Etc/GMT-3', 'GBPUSD': 'Etc/GMT-3', 'USDCAD': 'Etc/GMT-3',
+                       'USDSEK': 'Etc/GMT-3', 'USDCHF': 'Etc/GMT-3'}
     # 根据interval选择对应的处理逻辑，一切以最小粒度分钟为基础进行组合。
     result_list = []
 
@@ -274,8 +279,8 @@ def get_dxy_from_mt5(start, end, interval):
                 skip = False
                 # 遍历dxy_symbol_list,拉取这个时间周期的所有symbol报价,用于计算dxy
                 the_time_by_minute = start_rounding_time + timedelta(minutes=minute)
-                for symbol in dxy_symbol_list:
-                    symbol_rates = get_historical_data_from_mt5(symbol, interval,
+                for symbol, timezone in dxy_symbol_list.items():
+                    symbol_rates = get_historical_data_from_mt5(symbol, timezone, interval,
                                                                 the_time_by_minute, the_time_by_minute)
                     # 发现一个新问题，mt5中某个时间点的数据有可能为空。碰到这种情况就直接跳过即可
                     if len(symbol_rates) > 0:
@@ -308,8 +313,8 @@ def get_dxy_from_mt5(start, end, interval):
                 skip = False
                 # 遍历dxy_symbol_list,拉取这个时间周期的所有symbol报价,用于计算dxy
                 the_time_by_hour = start_rounding_time + timedelta(hours=hour)
-                for symbol in dxy_symbol_list:
-                    symbol_rates = get_historical_data_from_mt5(symbol, interval,
+                for symbol, timezone in dxy_symbol_list.items():
+                    symbol_rates = get_historical_data_from_mt5(symbol, timezone, interval,
                                                                 the_time_by_hour, the_time_by_hour)
                     # 发现一个新问题，mt5中某个时间点的数据有可能为空。碰到这种情况就直接跳过即可
                     if len(symbol_rates) > 0:
@@ -342,7 +347,7 @@ def fetch_data(start, end, interval):
         elif symbol.method == 'get_historical_data_from_mt5':
             # mt5数据间隔转换，需要把小时或分钟等间隔转换为TIMEFRAME；详情可参考：https://www.mql5.com/en/docs/integration/python_metatrader5/mt5copyratesfrom_py#timeframe
             # 目前只支持1h和1m转换，需要的话继续加条件就好了
-            data_list = get_historical_data_from_mt5(symbol.symbol_value, interval, start, end)
+            data_list = get_historical_data_from_mt5(symbol.symbol_value, symbol.timezone, interval, start, end)
         elif symbol.method == 'originate_from_mt5' and symbol.symbol_value == 'DXY_MT5':
             data_list = get_dxy_from_mt5(start, end, interval)
         logger.info("数据抓取完成：%s[%s ~ %s]@%s => %d", symbol.name, start, end, interval, len(data_list))
