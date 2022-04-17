@@ -1,3 +1,8 @@
+from libs.database import *
+
+logger = commons.create_logger()
+
+
 def update_historical_pivot_report(combination, default_column=4):
     """
     为指定的Combination生成从特定时间点开始（默认为该Combination最早的组合价格数据的时间戳的时间），生成到最新的时间戳为止的日线行情记录表。
@@ -18,3 +23,26 @@ def record_check(price, table_name):
     :return: True/False
     """
     pass
+
+
+def get_combination_symbol_timezone(combination_id):
+    '''
+    根据combination id，获取组成该combination的symbol的所有时区列表，用于生成属于该时区对应的日线行情记录表。
+    :param combination_id: 待获取时区的组合ID
+    ：return：{'combination_timezone':该组合ID去重后的时区列表}
+    '''
+    try:
+        combination = Combination.get(Combination.id == combination_id)
+    except:
+        logger.error("缺少对应combination的行情数据：combo_id=%s", combination_id)
+        return None
+    # 根据symbol ID到Tbl_symbol_method中获取对应的时区
+    else:
+        tz = []
+        for symbolid in combination.symbol_list.split(","):
+            ts = Symbol.get(Symbol.id == int(symbolid))
+            tz.append(ts.timezone)
+        # 去除重复元素
+        tz = list(set(tz))
+        result = {'combination_timezone': tz}
+        return result
