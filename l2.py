@@ -1,3 +1,7 @@
+#!/usr/bin/python
+# -*- coding: utf-8
+
+
 import argparse
 import time
 from datetime import datetime, timedelta
@@ -5,7 +9,7 @@ import pytz
 
 from libs import gen_combinations_price
 from libs.fetcher import get_historical_data_from_mt5, get_historical_data_from_yfinance, get_dxy_from_mt5
-from libs.database import Symbol
+from libs.database import *
 
 
 def update_historical_combination_price(args):
@@ -64,13 +68,15 @@ def get_symbol_price(args):
                 if interval == '1m':
                     mt5_start_time = datetime.now(tz=mt5_tz).replace(second=0, microsecond=0) - timedelta(minutes=1)
                 else:
-                    mt5_start_time = datetime.now(tz=mt5_tz).replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
+                    mt5_start_time = datetime.now(tz=mt5_tz).replace(minute=0, second=0, microsecond=0) - timedelta(
+                        hours=1)
                 # 结束时间等于开始时间
                 mt5_end_time = mt5_start_time
                 # 拉取数据
                 try:
                     print(
-                        get_historical_data_from_mt5(symbol_value, symbol.timezone, interval, mt5_start_time, mt5_end_time)[
+                        get_historical_data_from_mt5(symbol_value, symbol.timezone, interval, mt5_start_time,
+                                                     mt5_end_time)[
                             0])
                 except IndexError:
                     print("%s:数据拉取失败@%s" % symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
@@ -82,7 +88,8 @@ def get_symbol_price(args):
                 if interval == '1m':
                     mt5_start_time = datetime.now(tz=mt5_tz).replace(second=0, microsecond=0) - timedelta(minutes=1)
                 else:
-                    mt5_start_time = datetime.now(tz=mt5_tz).replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
+                    mt5_start_time = datetime.now(tz=mt5_tz).replace(minute=0, second=0, microsecond=0) - timedelta(
+                        hours=1)
                     # 结束时间与开始时间相等
                 mt5_end_time = mt5_start_time
                 # 根据mt5等货币对报价，生成DXY
@@ -91,6 +98,28 @@ def get_symbol_price(args):
                 except IndexError:
                     print("%s:数据拉取失败@%s", symbol_value, str(mt5_start_time) + "~" + str(mt5_end_time))
         time.sleep(60)
+
+
+def sync_database(args):
+    data = {}
+    models = Model.__subclasses__()
+    models.extend(BaseSymbolPrice.__subclasses__())
+    for sc in models:
+        if sc != BaseSymbolPrice:
+            alist = data.get(sc._meta.database)
+            if alist is None:
+                alist = []
+            alist.append(sc)
+            data[sc._meta.database] = alist
+    tables = []
+    for db in data.keys():
+        tables.extend(db.get_tables())
+    for db, alist in data.items():
+        for model in alist:
+            table_name = model._meta.table_name
+            if table_name not in tables:
+                print("create table", table_name)
+                db.create_tables([model])
 
 
 if __name__ == '__main__':
@@ -117,6 +146,10 @@ if __name__ == '__main__':
     parser_symbol_price.add_argument('-interval', type=str, default='1h', help='间隔时间：[1h, 1m]')
     parser_symbol_price.add_argument('symbol', nargs='*', default='XAUUSD', help='symbols，支持多个指定(空格分隔)')
     parser_symbol_price.set_defaults(func=get_symbol_price)
+
+    # 子命令：同步数据库(创建表)
+    parser_sync_database = subparser.add_parser('sync_db', help='同步(创建)数据库表')
+    parser_sync_database.set_defaults(func=sync_database)
 
     # 解析参数
     args = parser.parse_args()
