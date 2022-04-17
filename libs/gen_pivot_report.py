@@ -1,9 +1,10 @@
 from enum import IntEnum, unique
 
+from libs import commons
 from libs.database import *
-
 from libs.database import PivotReportRecord
 
+logger = commons.create_logger()
 
 
 @unique
@@ -73,25 +74,28 @@ def price_need_record(price, pivot_report, default_column=PivotReportColumn.DOWN
     else:
         raise Exception("当前不支持的栏目逻辑：%s" % str(latest_column))
 
+
+def determine_column(current_column, current_price, trio_point_price):
+    pass
+
+
 def get_combination_symbol_timezone(combination_id):
-    '''
+    """
     根据combination id，获取组成该combination的symbol的所有时区列表，用于生成属于该时区对应的日线行情记录表。
     :param combination_id: 待获取时区的组合ID
     ：return：{'combination_timezone':该组合ID去重后的时区列表}
-    '''
+    """
     try:
-        combination = Combination.get(Combination.id == combination_id)
+        combination = Combination.get_by_id(combination_id)
     except:
         logger.error("缺少对应combination的行情数据：combo_id=%s", combination_id)
         return None
     # 根据symbol ID到Tbl_symbol_method中获取对应的时区
     else:
         tz = []
-        for symbolid in combination.symbol_list.split(","):
-            ts = Symbol.get(Symbol.id == int(symbolid))
-            tz.append(ts.timezone)
-        # 去除重复元素
-        tz = list(set(tz))
+        for symbol_id in combination.symbol_list.split(","):
+            symbol = Symbol.get_by_id(int(symbol_id))
+            if symbol.timezone not in tz:
+                tz.append(symbol.timezone)
         result = {'combination_timezone': tz}
         return result
-
