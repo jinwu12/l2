@@ -49,11 +49,10 @@ def price_need_record(price, pivot_report, default_column=PivotReportColumn.DOWN
     latest_column = default_column
     latest_price = price
     # 取最新的且有记录的数据
-    records = PivotReportRecord.select().where(PivotReportRecord.pivot_report == pivot_report,
+    record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == pivot_report,
                                                PivotReportRecord.is_recorded == True).order_by(
-        PivotReportRecord.date.desc()).limit(1).execute()
-    if len(records) > 0:
-        record = records[0]
+        PivotReportRecord.date.desc()).limit(1).get_or_none()
+    if record is not None:
         try:
             latest_column = PivotReportColumn(record.recorded_column)
         except ValueError:  # 值非法，使用默认值
@@ -75,8 +74,137 @@ def price_need_record(price, pivot_report, default_column=PivotReportColumn.DOWN
         raise Exception("当前不支持的栏目逻辑：%s" % str(latest_column))
 
 
-def determine_column(current_column, current_price, trio_point_price):
-    pass
+def determine_column(latest_prr, current_price, trio_point_price):
+    """
+    栏目切换
+    :param latest_prr:  最新的行情记录
+    :param current_price: 当前价格
+    :param trio_point_price: 3点价格
+    :return:
+    """
+    latest_column = PivotReportColumn(latest_prr.recorded_column)
+    target_column = None
+    mute_count = 0  # 切换次数
+    if latest_column == PivotReportColumn.NATURAL_RALLY:
+        # 传入价格（今日收盘价）比自然回升栏（2）最新一个关键点价格高3点或更多则切换到上升趋势栏
+        record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                  PivotReportRecord.recorded_column == PivotReportColumn.NATURAL_RALLY,
+                                                  PivotReportRecord.is_pivot == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record is not None and current_price - record.price >= 3:
+            mute_count += 1
+            target_column = PivotReportColumn.UPWARD_TREND
+        # 传入价格（今日收盘价）比上升趋势栏（3）最新一条有记录的价格高则切换到上升趋势栏
+        record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                  PivotReportRecord.recorded_column == PivotReportColumn.UPWARD_TREND
+                                                  ).order_by(PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record is not None and current_price - record.price >= 3:
+            mute_count += 1
+            target_column = PivotReportColumn.UPWARD_TREND
+        # 今日的收盘价比自然回升栏最新一条有记录的价格低6点或以上，但并没有低于自然回撤栏中但最新一个有记录的价格，则切换到次级回撤栏
+        record1 = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                   PivotReportRecord.recorded_column == PivotReportColumn.NATURAL_RALLY,
+                                                   PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        record2 = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                   PivotReportRecord.recorded_column == PivotReportColumn.NATURAL_REACTION,
+                                                   PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record1 is not None and record2 is not None and record1.price - current_price >= 6 \
+                and current_price >= record2.price:
+            mute_count += 1
+            target_column = PivotReportColumn.SECONDARY_REACTION
+        # 今日收盘价比自然回升栏最新一条有记录的价格低了6点或更多则切换到自然回撤栏
+        if record1 is not None and record1.price - current_price >= 6:
+            mute_count += 1
+            target_column = PivotReportColumn.NATURAL_REACTION
+    elif latest_column == PivotReportColumn.NATURAL_REACTION:
+        # 传入价格（今日收盘价）比自然回撤栏（5）最新一个关键点的价格低3点或更多则切换到下降趋势栏
+        record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                  PivotReportRecord.recorded_column == PivotReportColumn.NATURAL_REACTION,
+                                                  PivotReportRecord.is_pivot == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record is not None and record.price - current_price >= 3:
+            mute_count += 1
+            target_column = PivotReportColumn.DOWNWARD_TREND
+        # 传入价格（今日收盘价）比下降趋势栏（4）的最新一条有记录的价格低则切换到下降趋势栏
+        record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                  PivotReportRecord.recorded_column == PivotReportColumn.DOWNWARD_TREND,
+                                                  PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record is not None and record.price > current_price:
+            mute_count += 1
+            target_column = PivotReportColumn.DOWNWARD_TREND
+        # 今日收盘价比自然回撤栏的最新一条有记录的价格高6点或以上，但并没有超过自然回升栏的最新一个有记录的价格，切换至次级回升栏
+        record1 = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                   PivotReportRecord.recorded_column == PivotReportColumn.NATURAL_REACTION,
+                                                   PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        record2 = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                   PivotReportRecord.recorded_column == PivotReportColumn.NATURAL_RALLY,
+                                                   PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record1 is not None and record2 is not None and current_price - record1.price >= 6 \
+                and current_price <= record2.price:
+            mute_count += 1
+            target_column = PivotReportColumn.SECONDARY_RALLY
+        # 今日收盘价比自然回撤栏最新一条记录的价格高6点或更多则切换到自然回升栏
+        if record1 is not None and current_price - record1.price >= 6:
+            mute_count += 1
+            target_column = PivotReportColumn.NATURAL_RALLY
+    elif latest_column == PivotReportColumn.SECONDARY_RALLY:
+        # 今日收盘价比自然回升栏最后一个有记录的价格高则切换到自然回升栏
+        record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                  PivotReportRecord.recorded_column == PivotReportColumn.NATURAL_RALLY,
+                                                  PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record is not None and current_price > record.price:
+            mute_count += 1
+            target_column = PivotReportColumn.NATURAL_RALLY
+        # 今日收盘价比自然回撤栏最后一个有记录的价格低则切换到自然回撤栏
+        record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                  PivotReportRecord.recorded_column == PivotReportColumn.NATURAL_REACTION,
+                                                  PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record is not None and current_price < record.price:
+            mute_count += 1
+            target_column = PivotReportColumn.NATURAL_REACTION
+    elif latest_column == PivotReportColumn.SECONDARY_REACTION:
+        # 今日收盘价比自然回撤栏最后一个有记录的价格低则切换到自然回撤栏
+        record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                  PivotReportRecord.recorded_column == PivotReportColumn.NATURAL_REACTION,
+                                                  PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record is not None and current_price < record.price:
+            mute_count += 1
+            target_column = PivotReportColumn.NATURAL_REACTION
+        # 今日收盘价比自然回升栏最后一个有记录的价格高则切换到自然回升栏
+        record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                  PivotReportRecord.recorded_column == PivotReportColumn.NATURAL_RALLY,
+                                                  PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record is not None and current_price > record.price:
+            mute_count += 1
+            target_column = PivotReportColumn.NATURAL_RALLY
+    elif latest_column == PivotReportColumn.UPWARD_TREND:
+        # 今日收盘价比上升趋势栏最新一条有记录的价格低6点或以上则切换到自然回撤栏
+        record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                  PivotReportRecord.recorded_column == PivotReportColumn.UPWARD_TREND,
+                                                  PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record is not None and record.price - current_price >= 6:
+            mute_count += 1
+            target_column = PivotReportColumn.NATURAL_REACTION
+    elif latest_column == PivotReportColumn.DOWNWARD_TREND:
+        # 今日收盘价比下降趋势栏最新一条有记录的价格高6点或更多则切换到自然回升栏
+        record = PivotReportRecord.select().where(PivotReportRecord.pivot_report == latest_prr.pivot_report,
+                                                  PivotReportRecord.recorded_column == PivotReportColumn.DOWNWARD_TREND,
+                                                  PivotReportRecord.is_recorded == True).order_by(
+            PivotReportRecord.date.desc()).limit(1).get_or_none()
+        if record is not None and record.price - current_price >= 6:
+            mute_count += 1
+            target_column = PivotReportColumn.NATURAL_RALLY
+    return target_column
 
 
 def get_combination_symbol_timezone(combination_id):
