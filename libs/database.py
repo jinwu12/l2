@@ -1,20 +1,23 @@
+import os
 from configparser import ConfigParser
 
-from abc import abstractmethod
 from peewee import *
-import mysql.connector
-from libs import commons
+
+env = os.getenv("env", "prod")  # 通过环境变量感知当前是什么环境，默认为生产环境prod
+is_prod_env = env == "prod"
+is_test_env = env == "test"
 
 cfg = ConfigParser()
 cfg.read('./config.ini')
-db_host = cfg.get('database', 'host')
-db_user = cfg.get('database', 'user')
-db_passwords = cfg.get('database', 'passwords')
+section = 'database' if is_prod_env or is_test_env else env + '.database'
+db_host = cfg.get(section, 'host')
+db_user = cfg.get(section, 'user')
+db_passwords = cfg.get(section, 'passwords')
 
 ################################################
 config_db = MySQLDatabase(
     'Global_Config', host=db_host, user=db_user, passwd=db_passwords, port=3306
-)
+) if not is_test_env else SqliteDatabase(':memory:')
 
 
 # 信号类型对象，存储在Global_config中
@@ -124,6 +127,7 @@ class Symbol(Model):
     symbol_value = CharField(max_length=16)
     contract_size = CharField(max_length=32)
     digits = SmallIntegerField()
+    # 3点价格，人工指定
     trio_point_price = DecimalField(column_name="3point_price", max_digits=10)
 
     class Meta:
@@ -139,7 +143,7 @@ production_signal_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-)
+) if not is_test_env else SqliteDatabase(':memory:')
 
 
 class Signal(Model):
@@ -173,7 +177,7 @@ production_pivot_report_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-)
+) if not is_test_env else SqliteDatabase(':memory:')
 
 
 # 行情记录表的每日记录类
@@ -217,7 +221,7 @@ data_source_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-)
+) if not is_test_env else SqliteDatabase(':memory:')
 
 
 # symbol行情数据基类
@@ -312,7 +316,7 @@ production_combined_data_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-)
+) if not is_test_env else SqliteDatabase(':memory:')
 
 
 class CombinedSymbol(BaseSymbolPrice):
@@ -335,6 +339,10 @@ class Cache:
     symbol_map = {}
 
     def __init__(self):
+        # 测试模式要先创建表
+        if is_test_env:
+            config_db.create_tables([Symbol])
+        # 下面是正常逻辑
         self.reload()
 
     # TODO 外部改了全局配置数据需要手工调用这个方法
