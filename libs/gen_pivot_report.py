@@ -227,3 +227,42 @@ def get_combination_symbol_timezone(combination_id):
                 tz.append(symbol.timezone)
         result = {'combination_timezone': tz}
         return result
+
+def update_pivot_point(src_column, dst_column, pivot_report):
+    """
+    根据更新关键点的判断规则，在符合规则时更新历史价格为关键点
+    :param src_column：源记录栏
+    :param dst_column：目标记录栏
+    :param pivot_report: pivot_report编号，用于获取当前最新记录栏及最新的有记录价格
+    :return:{
+            'result':True/False,
+            'pivot_point_column': 更新的关键点所在记录栏
+            'pivot_point_date':更新的关键点的日期
+             }
+    """
+    result = False
+    pivot_point_column = 0
+    pivot_point_date = ''
+    # 获取源记录栏最新的记录
+    records = PivotReportRecord.select().where(PivotReportRecord.pivot_report == pivot_report,
+                                               PivotReportRecord.is_recorded == True,
+                                               PivotReportRecord.recorded_column == src_column).order_by(
+        PivotReportRecord.date.desc()).limit(1).execute()
+    if len(records) > 0:
+        record = records[0]
+        if src_column == PivotReportColumn.NATURAL_RALLY and dst_column == PivotReportColumn.NATURAL_REACTION:
+            result = True
+        elif src_column == PivotReportColumn.UPWARD_TREND and dst_column == PivotReportColumn.NATURAL_REACTION:
+            result = True
+        elif src_column == PivotReportColumn.DOWNWARD_TREND and dst_column == PivotReportColumn.NATURAL_RALLY:
+            result = True
+        elif src_column == PivotReportColumn.NATURAL_REACTION and dst_column == PivotReportColumn.NATURAL_RALLY:
+            result = True
+        if result:
+            pivot_point_column = src_column
+            pivot_point_date = time.strftime("%Y-%m-%d", record.data)
+            return {
+                'result': result,
+                'pivot_point_column': pivot_point_column,
+                'pivot_point_date': pivot_point_date
+            }
