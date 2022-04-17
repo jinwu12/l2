@@ -2,6 +2,9 @@ from enum import IntEnum, unique
 
 from libs.database import *
 
+from libs.database import PivotReportRecord
+
+
 
 @unique
 class PivotReportColumn(IntEnum):
@@ -113,3 +116,4 @@ def get_combination_symbol_timezone(combination_id):
         tz = list(set(tz))
         result = {'combination_timezone': tz}
         return result
+
