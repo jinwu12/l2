@@ -13,6 +13,7 @@ class DatabaseTestCase(unittest.TestCase):
         print("create tables...")
         data_source_db.create_tables([XauUsd, Dxy, DxyMt5, EurUsd, GbpUsd, Tnx, UsdCad, UsdChf, UsdJpy, UsdSek])
         production_combined_data_db.create_tables([CombinedSymbol])
+        production_pivot_report_db.create_tables([PivotReportRecord])
 
     def test_account_query(self):
         accounts = AccountInfo.select()
