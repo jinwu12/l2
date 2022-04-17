@@ -17,7 +17,7 @@ db_passwords = cfg.get(section, 'passwords')
 ################################################
 config_db = MySQLDatabase(
     'Global_Config', host=db_host, user=db_user, passwd=db_passwords, port=3306
-) if is_prod_env else SqliteDatabase(':memory:')
+) if not is_test_env else SqliteDatabase(':memory:')
 
 
 # 信号类型对象，存储在Global_config中
@@ -143,7 +143,7 @@ production_signal_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-) if is_prod_env else SqliteDatabase(':memory:')
+) if not is_test_env else SqliteDatabase(':memory:')
 
 
 class Signal(Model):
@@ -177,7 +177,7 @@ production_pivot_report_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-) if is_prod_env else SqliteDatabase(':memory:')
+) if not is_test_env else SqliteDatabase(':memory:')
 
 
 # 行情记录表的每日记录类
@@ -221,7 +221,7 @@ data_source_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-) if is_prod_env else SqliteDatabase(':memory:')
+) if not is_test_env else SqliteDatabase(':memory:')
 
 
 # symbol行情数据基类
@@ -316,7 +316,7 @@ production_combined_data_db = MySQLDatabase(
     user=db_user,
     passwd=db_passwords,
     port=3306
-) if is_prod_env else SqliteDatabase(':memory:')
+) if not is_test_env else SqliteDatabase(':memory:')
 
 
 class CombinedSymbol(BaseSymbolPrice):
