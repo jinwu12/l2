@@ -525,23 +525,14 @@ class TestFunctions(unittest.TestCase):
             self.assertIsNone(data)
 
 
-'''
     def test_update_historical_combined_data(self):
         start = datetime.datetime.strptime(
-            '2022-01-04 00:00:00', '%Y-%m-%d %H:%M:%S')
+            '2022-01-03 00:00:00', '%Y-%m-%d %H:%M:%S')
         end = datetime.datetime.strptime(
-            '2022-01-04 23:59:59', '%Y-%m-%d %H:%M:%S')
-        combination_ids = [1,3,4]
-        mock_value={'symbol': 'XAUUSD_EURUSD_DXY_best_effort_match_6_usd',
-                    'ts': 1641394800, 'interval': '1h', 'price_open': 4.104220779220778,
-                    'price_high': 4.483194805194805, 'price_low': 4.317701298701299,
-                    'price_closed': 4.358532467532467}
-        mock_calc_combo_price=Mock(return_value=mock_value)
-        with patch('libs.gen_combinations_price.calc_combo_price', mock_calc_combo_price):
-            gen_combinations_price.update_historical_combined_data(
+            '2022-01-05 23:59:59', '%Y-%m-%d %H:%M:%S')
+        combination_ids = [1]
+        gen_combinations_price.update_historical_combined_data(
                 '1h', start, end,combination_ids)
-            print(mock_calc_combo_price.call_count)
-'''
 
 if __name__ == '__main__':
     unittest.main()
