@@ -239,6 +239,7 @@ def calc_combo_price_best_effort_match(symbol_rates_list, combination):
     # 出现次数最多的ts
     ts_counter = Counter(valid_ts_list)
     most_common_ts = ts_counter.most_common(1)[0][0]
+    max_valid_ts = max(valid_ts_list)
     first_rate = candidate_rates_list[0]
     first_interval = first_rate['interval']
     if len(lack_symbols) > 0:
@@ -284,7 +285,7 @@ def calc_combo_price_best_effort_match(symbol_rates_list, combination):
         low_combo_price += item['price_low'] / trio_point_price_map[symbol_value] * 3
         closed_combo_price += item['price_closed'] / trio_point_price_map[symbol_value] * 3
 
-    result = dict(symbol=generate_combination_name(combination), ts=most_common_ts, interval=first_interval,
+    result = dict(symbol=generate_combination_name(combination), ts=max_valid_ts, interval=first_interval,
                   price_open=open_combo_price,
                   price_high=high_combo_price, price_low=low_combo_price, price_closed=closed_combo_price)
     return result
