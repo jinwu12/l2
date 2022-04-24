@@ -242,32 +242,57 @@ def update_pivot_point(src_column, dst_column, pivot_report):
              }
     """
     result = False
-    pivot_point_column = 0
-    pivot_point_date = ''
-    # 获取源记录栏最新的记录
-    records = PivotReportRecord.select().where(PivotReportRecord.pivot_report == pivot_report,
-                                               PivotReportRecord.is_recorded == True,
-                                               PivotReportRecord.recorded_column == src_column).order_by(
-        PivotReportRecord.date.desc()).limit(1).execute()
-    if len(records) > 0:
-        record = records[0]
-        if src_column == PivotReportColumn.NATURAL_RALLY and dst_column == PivotReportColumn.NATURAL_REACTION:
-            result = True
-        elif src_column == PivotReportColumn.UPWARD_TREND and dst_column == PivotReportColumn.NATURAL_REACTION:
-            result = True
-        elif src_column == PivotReportColumn.DOWNWARD_TREND and dst_column == PivotReportColumn.NATURAL_RALLY:
-            result = True
-        elif src_column == PivotReportColumn.NATURAL_REACTION and dst_column == PivotReportColumn.NATURAL_RALLY:
-            result = True
-        if result:
-            pivot_point_column = src_column
-            pivot_point_date = time.strftime("%Y-%m-%d", record.data)
-            return {
-                'result': result,
-                'pivot_point_column': pivot_point_column,
-                'pivot_point_date': pivot_point_date
-            }
-
+    pivot_point_column = []
+    pivot_point_date = []
+    key_point = []  # 待更新的关键点记录栏
+    # 判断是否需要更新关键点
+    if src_column == PivotReportColumn.NATURAL_RALLY and dst_column == PivotReportColumn.NATURAL_REACTION:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_RALLY, PivotReportColumn.UPWARD_TREND]
+    elif src_column == PivotReportColumn.NATURAL_RALLY and dst_column == PivotReportColumn.UPWARD_TREND:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_REACTION]
+    elif src_column == PivotReportColumn.UPWARD_TREND and dst_column == PivotReportColumn.NATURAL_REACTION:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_RALLY, PivotReportColumn.UPWARD_TREND]
+    elif src_column == PivotReportColumn.DOWNWARD_TREND and dst_column == PivotReportColumn.NATURAL_RALLY:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_REACTION, PivotReportColumn.DOWNWARD_TREND]
+    elif src_column == PivotReportColumn.NATURAL_REACTION and dst_column == PivotReportColumn.NATURAL_RALLY:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_REACTION, PivotReportColumn.DOWNWARD_TREND]
+    elif src_column == PivotReportColumn.NATURAL_REACTION and dst_column == PivotReportColumn.DOWNWARD_TREND:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_RALLY]
+    elif src_column == PivotReportColumn.SECONDARY_RALLY and dst_column == PivotReportColumn.NATURAL_RALLY:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_REACTION, PivotReportColumn.DOWNWARD_TREND]
+    elif src_column == PivotReportColumn.SECONDARY_RALLY and dst_column == PivotReportColumn.NATURAL_REACTION:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_RALLY, PivotReportColumn.UPWARD_TREND]
+    elif src_column == PivotReportColumn.SECONDARY_REACTION and dst_column == PivotReportColumn.NATURAL_REACTION:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_RALLY, PivotReportColumn.UPWARD_TREND]
+    elif src_column == PivotReportColumn.SECONDARY_REACTION and dst_column == PivotReportColumn.NATURAL_RALLY:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_REACTION, PivotReportColumn.DOWNWARD_TREND]
+    if result:
+        # 获取关键栏在时间戳以前的最新记录确定关键点
+        for point in key_point:
+            records = PivotReportRecord.select().where(PivotReportRecord.pivot_report == pivot_report,
+                                                       PivotReportRecord.is_recorded == True,
+                                                       PivotReportRecord.recorded_column == point).order_by(
+                PivotReportRecord.date.desc()).limit(1).execute()
+            if len(records) > 0:
+                record = records[0]
+                pivot_point_column.append(point)
+                pivot_point_date.append(time.strftime("%Y-%m-%d", record.data))
+    Re= {
+        'result': result,
+        'pivot_point_column': pivot_point_column,
+        'pivot_point_date': pivot_point_date
+    }
+    return Re
 
 def update_historical_pivot_point(src_column, dst_column, pivot_report, latest_ts):
     """
@@ -283,29 +308,55 @@ def update_historical_pivot_point(src_column, dst_column, pivot_report, latest_t
              }
     """
     result = False
-    pivot_point_column = 0
-    pivot_point_date = ''
-    # 获取源记录栏在时间戳以前的最新记录
-    records = PivotReportRecord.select().where(PivotReportRecord.pivot_report == pivot_report,
-                                               PivotReportRecord.is_recorded == True,
-                                               PivotReportRecord.recorded_column == src_column,
-                                               PivotReportRecord.date < latest_ts).order_by(
-        PivotReportRecord.date.desc()).limit(1).execute()
-    if len(records) > 0:
-        record = records[0]
-        if src_column == PivotReportColumn.NATURAL_RALLY and dst_column == PivotReportColumn.NATURAL_REACTION:
-            result = True
-        elif src_column == PivotReportColumn.UPWARD_TREND and dst_column == PivotReportColumn.NATURAL_REACTION:
-            result = True
-        elif src_column == PivotReportColumn.DOWNWARD_TREND and dst_column == PivotReportColumn.NATURAL_RALLY:
-            result = True
-        elif src_column == PivotReportColumn.NATURAL_REACTION and dst_column == PivotReportColumn.NATURAL_RALLY:
-            result = True
-        if result:
-            pivot_point_column = src_column
-            pivot_point_date = time.strftime("%Y-%m-%d", record.data)
-            return {
-                'result': result,
-                'pivot_point_column': pivot_point_column,
-                'pivot_point_date': pivot_point_date
-            }
+    pivot_point_column = []
+    pivot_point_date = []
+    key_point = []  # 待更新的关键点记录栏
+    # 判断是否需要更新关键点
+    if src_column == PivotReportColumn.NATURAL_RALLY and dst_column == PivotReportColumn.NATURAL_REACTION:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_RALLY, PivotReportColumn.UPWARD_TREND]
+    elif src_column == PivotReportColumn.NATURAL_RALLY and dst_column == PivotReportColumn.UPWARD_TREND:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_REACTION]
+    elif src_column == PivotReportColumn.UPWARD_TREND and dst_column == PivotReportColumn.NATURAL_REACTION:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_RALLY, PivotReportColumn.UPWARD_TREND]
+    elif src_column == PivotReportColumn.DOWNWARD_TREND and dst_column == PivotReportColumn.NATURAL_RALLY:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_REACTION, PivotReportColumn.DOWNWARD_TREND]
+    elif src_column == PivotReportColumn.NATURAL_REACTION and dst_column == PivotReportColumn.NATURAL_RALLY:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_REACTION, PivotReportColumn.DOWNWARD_TREND]
+    elif src_column == PivotReportColumn.NATURAL_REACTION and dst_column == PivotReportColumn.DOWNWARD_TREND:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_RALLY]
+    elif src_column == PivotReportColumn.SECONDARY_RALLY and dst_column == PivotReportColumn.NATURAL_RALLY:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_REACTION, PivotReportColumn.DOWNWARD_TREND]
+    elif src_column == PivotReportColumn.SECONDARY_RALLY and dst_column == PivotReportColumn.NATURAL_REACTION:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_RALLY, PivotReportColumn.UPWARD_TREND]
+    elif src_column == PivotReportColumn.SECONDARY_REACTION and dst_column == PivotReportColumn.NATURAL_REACTION:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_RALLY, PivotReportColumn.UPWARD_TREND]
+    elif src_column == PivotReportColumn.SECONDARY_REACTION and dst_column == PivotReportColumn.NATURAL_RALLY:
+        result = True
+        key_point = [PivotReportColumn.NATURAL_REACTION, PivotReportColumn.DOWNWARD_TREND]
+    if result:
+        # 获取关键栏在时间戳以前的最新记录确定关键点
+        for point in key_point:
+            records = PivotReportRecord.select().where(PivotReportRecord.pivot_report == pivot_report,
+                                                       PivotReportRecord.is_recorded == True,
+                                                       PivotReportRecord.recorded_column == point,
+                                                       PivotReportRecord.date < latest_ts).order_by(
+                PivotReportRecord.date.desc()).limit(1).execute()
+            if len(records) > 0:
+                record = records[0]
+                pivot_point_column.append(point)
+                pivot_point_date.append(time.strftime("%Y-%m-%d", record.data))
+    Re= {
+        'result': result,
+        'pivot_point_column': pivot_point_column,
+        'pivot_point_date': pivot_point_date
+    }
+    return Re
