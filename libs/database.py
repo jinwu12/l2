@@ -54,7 +54,7 @@ class PivotReport(Model):
     timezone = CharField(column_name='timezone', max_length=16, null=False)
     # 组合方法，行情记录表对应的combination下的combined_method
     combined_method = CharField(
-        column_name='combined_method', max_length=16, null=False
+        column_name='combined_method', max_length=32, null=False
     )
     # 开始记录时间，默认值应为combination最早有记录的时间, 以utc0时区的时间戳存储
     start_date = BigIntegerField(column_name='start_date', null=False)

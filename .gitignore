@@ -132,3 +132,5 @@ dmypy.json
 config.ini
 
 test_case/logs
+test_case/EURUSDM1.csv
+test_case/XAUUSDH1.csv

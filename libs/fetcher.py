@@ -205,7 +205,7 @@ def update_realtime_data(interval, skip_symbol=[]):
 # 根据特定时间点的美元指数成分货币对报价，计算该时间点的美元指数报价
 def calculate_dxy(symbols_rate_list):
     # 初始化dxy_rate_list，列表元素第一个为symbol名称、第二个为时间戳、第三个为开盘价、第四个为最高价、第五个为最低价、第六个为收盘价
-    dxy_rate = dict(symbol='DXY', ts=0, price_open=50.14348112, price_high=50.14348112, price_low=50.14348112,
+    dxy_rate = dict(symbol='DXY_MT5', ts=0, price_open=50.14348112, price_high=50.14348112, price_low=50.14348112,
                     price_closed=50.14348112)
     # 创建各个货币对对应的比例
     dxy_portions = {
