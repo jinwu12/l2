@@ -1,5 +1,6 @@
 from enum import IntEnum, unique
-
+import datetime
+import pytz
 from libs import commons
 from libs.database import *
 from libs.database import PivotReportRecord
@@ -282,11 +283,15 @@ def update_pivot_point(src_column, dst_column, pivot_report):
             records = PivotReportRecord.select().where(PivotReportRecord.pivot_report == pivot_report,
                                                        PivotReportRecord.is_recorded == True,
                                                        PivotReportRecord.recorded_column == point).order_by(
-                PivotReportRecord.date.desc()).limit(1).execute()
+                                                       PivotReportRecord.date.desc()).limit(1).execute()
             if len(records) > 0:
                 record = records[0]
                 pivot_point_column.append(point)
-                pivot_point_date.append(time.strftime("%Y-%m-%d", record.data))
+                report=PivotReport.get_by_id(pivot_report)
+                date=datetime.datetime.fromtimestamp(record.date)
+                tz=pytz.timezone(report.timezone)
+                date=date.replace().astimezone(tz)
+                pivot_point_date.append(date.strftime("%Y-%m-%d"))
     Re= {
         'result': result,
         'pivot_point_column': pivot_point_column,
@@ -353,7 +358,11 @@ def update_historical_pivot_point(src_column, dst_column, pivot_report, latest_t
             if len(records) > 0:
                 record = records[0]
                 pivot_point_column.append(point)
-                pivot_point_date.append(time.strftime("%Y-%m-%d", record.data))
+                report=PivotReport.get_by_id(pivot_report)
+                date=datetime.datetime.fromtimestamp(record.date)
+                tz=pytz.timezone(report.timezone)
+                date=date.replace().astimezone(tz)
+                pivot_point_date.append(date.strftime("%Y-%m-%d"))
     Re= {
         'result': result,
         'pivot_point_column': pivot_point_column,
